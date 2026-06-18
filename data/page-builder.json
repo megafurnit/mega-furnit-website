@@ -1,0 +1,29 @@
+{
+  "theme": {
+    "primaryBackground": "#F3EBDD",
+    "secondaryBackground": "#EFE6D8",
+    "textColor": "#151515",
+    "headingColor": "#1E1E1E",
+    "buttonBackground": "#151515",
+    "buttonTextColor": "#FFFFFF",
+    "accentColor": "#B08A5A",
+    "cardBackground": "#FFFFFF",
+    "borderColor": "#8C867D",
+    "linkColor": "#6B4423",
+    "headingFont": "Georgia",
+    "bodyFont": "Inter",
+    "baseFontSize": "16px",
+    "buttonRadius": "8px",
+    "cardRadius": "8px",
+    "sectionSpacing": "82px"
+  },
+  "pages": {
+    "home": [],
+    "products": [],
+    "product-detail": [],
+    "capabilities": [],
+    "about": [],
+    "contact": [],
+    "catalog": []
+  }
+}

@@ -34,14 +34,15 @@ textarea {
 }
 
 .editor-sidebar {
-  display: grid;
-  grid-template-rows: auto auto auto 1fr auto;
-  gap: 16px;
   height: 100vh;
   overflow: auto;
   padding: 20px;
   background: var(--panel);
   border-right: 1px solid var(--line);
+}
+
+.editor-sidebar > * + * {
+  margin-top: 16px;
 }
 
 .editor-header {
@@ -129,6 +130,64 @@ textarea {
   max-height: 220px;
   overflow: auto;
   margin-bottom: 16px;
+}
+
+.swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.swatch {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.split-field {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+}
+
+.section-list {
+  display: grid;
+  gap: 8px;
+  max-height: 230px;
+  overflow: auto;
+  margin-bottom: 14px;
+}
+
+.section-row {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.section-row.is-active {
+  border-color: var(--forest);
+  box-shadow: inset 3px 0 0 var(--forest);
+}
+
+.section-row span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.nested-editor {
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
 }
 
 .product-row {

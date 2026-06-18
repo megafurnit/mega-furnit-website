@@ -11,6 +11,14 @@
   --clay: #b96f52;
   --shadow: 0 18px 50px rgba(23, 33, 29, 0.09);
   --radius: 8px;
+  --button-radius: 8px;
+  --button-text-color: #ffffff;
+  --heading-color: var(--ink);
+  --link-color: var(--forest);
+  --heading-font: Georgia, "Times New Roman", serif;
+  --body-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --base-font-size: 16px;
+  --section-spacing: 82px;
 }
 
 * {
@@ -21,7 +29,8 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--paper);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-family: var(--body-font);
+  font-size: var(--base-font-size);
   line-height: 1.55;
 }
 
@@ -31,7 +40,7 @@ img {
 }
 
 a {
-  color: inherit;
+  color: var(--link-color);
   text-decoration: none;
 }
 
@@ -131,7 +140,7 @@ textarea {
   min-height: 42px;
   padding: 11px 17px;
   border: 1px solid transparent;
-  border-radius: var(--radius);
+  border-radius: var(--button-radius);
   cursor: pointer;
   font-size: 14px;
   font-weight: 760;
@@ -140,7 +149,7 @@ textarea {
 
 .btn-primary {
   background: var(--forest);
-  color: #fff;
+  color: var(--button-text-color);
 }
 
 .btn-primary:hover {
@@ -248,7 +257,7 @@ textarea {
 }
 
 .section {
-  padding: 82px 0;
+  padding: var(--section-spacing) 0;
 }
 
 .section-alt {
@@ -265,7 +274,8 @@ textarea {
 
 h2,
 .page-hero h1 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--heading-font);
+  color: var(--heading-color);
 }
 
 h2 {
@@ -558,6 +568,150 @@ h2 {
   color: #fff;
 }
 
+.section-builder-section {
+  padding: var(--section-spacing) 0;
+}
+
+.section-builder-section h2,
+.section-builder-section h3 {
+  color: inherit;
+  font-family: var(--heading-font);
+}
+
+.section-builder-section p {
+  max-width: 760px;
+  color: inherit;
+}
+
+.section-builder-section.align-center,
+.section-builder-section .align-center {
+  text-align: center;
+}
+
+.section-builder-section.align-right,
+.section-builder-section .align-right {
+  text-align: right;
+}
+
+.section-builder-hero {
+  display: grid;
+  align-items: center;
+  min-height: 520px;
+  color: #fff;
+  background-position: center;
+  background-size: cover;
+}
+
+.section-builder-hero h2 {
+  max-width: 820px;
+  margin: 0;
+  font-size: clamp(38px, 6vw, 72px);
+  line-height: 1;
+}
+
+.section-builder-hero p,
+.section-builder-cta p {
+  font-size: 18px;
+}
+
+.section-builder-actions {
+  margin-top: 24px;
+}
+
+.section-builder-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 42px;
+  align-items: center;
+}
+
+.section-builder-split.image-right > :first-child {
+  order: 2;
+}
+
+.section-builder-split img,
+.section-builder-gallery img,
+.section-builder-card img {
+  width: 100%;
+  border-radius: var(--radius);
+  object-fit: cover;
+}
+
+.section-builder-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.section-builder-gallery figure {
+  margin: 0;
+}
+
+.section-builder-gallery figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.section-builder-video video {
+  width: 100%;
+  max-height: 620px;
+  border-radius: var(--radius);
+  background: #000;
+}
+
+.section-builder-cta {
+  text-align: center;
+}
+
+.section-builder-cta p {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.section-builder-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.section-builder-card {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.section-builder-faq {
+  display: grid;
+  gap: 10px;
+}
+
+.section-builder-faq details {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.section-builder-faq summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.section-builder-logo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+}
+
+.section-builder-logo-strip img {
+  max-width: 150px;
+  max-height: 70px;
+  object-fit: contain;
+}
+
 .footer-inner {
   display: flex;
   justify-content: space-between;
@@ -609,6 +763,9 @@ h2 {
   .capability-grid,
   .info-grid,
   .filters,
+  .section-builder-split,
+  .section-builder-gallery,
+  .section-builder-card-grid,
   .metrics {
     grid-template-columns: 1fr;
   }

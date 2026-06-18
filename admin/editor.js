@@ -4,7 +4,9 @@ const PAGE_URLS = {
   about: "/about.html",
   capabilities: "/capabilities.html",
   contact: "/contact.html",
-  products: "/products.html"
+  products: "/products.html",
+  "product-detail": "/product-detail.html?id=MF-SF001",
+  catalog: "/catalog.html"
 };
 
 const PAGE_LABELS = {
@@ -12,7 +14,9 @@ const PAGE_LABELS = {
   about: "About",
   capabilities: "Capabilities",
   contact: "Contact",
-  products: "Products"
+  products: "Products",
+  "product-detail": "Product Detail",
+  catalog: "Catalog"
 };
 
 const SITE_FIELDS = {
@@ -45,17 +49,64 @@ const CATEGORY_LABELS = {
   chairs: { en: "Chairs", es: "Sillas", zh: "椅类" }
 };
 
+const THEME_DEFAULTS = {
+  primaryBackground: "#F3EBDD",
+  secondaryBackground: "#EFE6D8",
+  textColor: "#151515",
+  headingColor: "#1E1E1E",
+  buttonBackground: "#151515",
+  buttonTextColor: "#FFFFFF",
+  accentColor: "#B08A5A",
+  cardBackground: "#FFFFFF",
+  borderColor: "#8C867D",
+  linkColor: "#6B4423",
+  headingFont: "Georgia",
+  bodyFont: "Inter",
+  baseFontSize: "16px",
+  buttonRadius: "8px",
+  cardRadius: "8px",
+  sectionSpacing: "82px"
+};
+
+const THEME_FIELDS = [
+  ["primaryBackground", "Primary background color", "color"],
+  ["secondaryBackground", "Secondary background color", "color"],
+  ["textColor", "Text color", "color"],
+  ["headingColor", "Heading color", "color"],
+  ["buttonBackground", "Button background color", "color"],
+  ["buttonTextColor", "Button text color", "color"],
+  ["accentColor", "Accent color", "color"],
+  ["cardBackground", "Card background color", "color"],
+  ["borderColor", "Border color", "color"],
+  ["linkColor", "Link color", "color"],
+  ["headingFont", "Heading font", "font"],
+  ["bodyFont", "Body font", "font"],
+  ["baseFontSize", "Base font size", "text"],
+  ["buttonRadius", "Button radius", "text"],
+  ["cardRadius", "Card radius", "text"],
+  ["sectionSpacing", "Section spacing", "text"]
+];
+
+const FONTS = ["Inter", "Arial", "Georgia", "Times New Roman", "Helvetica", "Verdana", "system-ui", "serif", "sans-serif"];
+const SWATCHES = ["#F3EBDD", "#EFE6D8", "#151515", "#1E1E1E", "#6B4423", "#7A5230", "#B08A5A", "#8C867D", "#FFFFFF"];
+const SECTION_TYPES = ["Hero Banner", "Text Block", "Image Banner", "Image Gallery", "Video Block", "CTA Banner", "Feature Cards", "Product Grid", "FAQ Section", "Logo Strip", "Custom HTML/Text Block"];
+const SECTION_PAGES = ["home", "products", "product-detail", "capabilities", "about", "contact", "catalog"];
+
 let siteContent = {};
 let productData = { products: [] };
+let pageBuilder = { theme: { ...THEME_DEFAULTS }, pages: {} };
 let selectedPage = "home";
 let selectedLanguage = "en";
 let selectedProductIndex = 0;
+let selectedSectionIndex = 0;
 let pendingUploads = new Map();
 let aiDraft = null;
 
 const pageSelector = document.querySelector("#pageSelector");
 const languageSelector = document.querySelector("#languageSelector");
 const contentEditor = document.querySelector("#contentEditor");
+const themeEditor = document.querySelector("#themeEditor");
+const sectionsEditor = document.querySelector("#sectionsEditor");
 const preview = document.querySelector("#sitePreview");
 const previewTitle = document.querySelector("#previewTitle");
 const statusMessage = document.querySelector("#statusMessage");
@@ -70,9 +121,26 @@ async function loadJson(path) {
   return response.json();
 }
 
+async function loadOptionalJson(path, fallback) {
+  try {
+    return await loadJson(path);
+  } catch (error) {
+    console.warn(`${path} was not loaded. Using fallback data.`);
+    return fallback;
+  }
+}
+
 function ensureLanguageObjects() {
   LANGUAGES.forEach((language) => {
     siteContent[language] = siteContent[language] || {};
+  });
+}
+
+function ensurePageBuilder() {
+  pageBuilder.theme = { ...THEME_DEFAULTS, ...(pageBuilder.theme || {}) };
+  pageBuilder.pages = pageBuilder.pages || {};
+  SECTION_PAGES.forEach((page) => {
+    pageBuilder.pages[page] = pageBuilder.pages[page] || [];
   });
 }
 
@@ -119,7 +187,8 @@ function sendPreviewUpdate() {
     type: "mega-furnit-preview",
     language: selectedLanguage,
     cmsContent: siteContent,
-    productData
+    productData,
+    pageBuilder
   }, "*");
 }
 
@@ -144,6 +213,309 @@ function fieldControl(key, label, type) {
   return wrapper;
 }
 
+function simpleInput(label, value, onInput, type = "text") {
+  const wrapper = document.createElement("div");
+  wrapper.className = "field";
+  const labelElement = document.createElement("label");
+  labelElement.textContent = label;
+  const input = document.createElement(type === "textarea" ? "textarea" : "input");
+  if (type !== "textarea") input.type = type;
+  input.value = value || "";
+  input.addEventListener("input", () => {
+    onInput(input.value);
+    sendPreviewUpdate();
+  });
+  wrapper.append(labelElement, input);
+  return wrapper;
+}
+
+function selectInput(label, value, options, onInput) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "field";
+  const labelElement = document.createElement("label");
+  labelElement.textContent = label;
+  const select = document.createElement("select");
+  options.forEach((optionValue) => {
+    const option = document.createElement("option");
+    option.value = optionValue;
+    option.textContent = optionValue;
+    select.append(option);
+  });
+  select.value = value || options[0];
+  select.addEventListener("change", () => {
+    onInput(select.value);
+    sendPreviewUpdate();
+    renderThemeEditor();
+    renderSectionsEditor();
+  });
+  wrapper.append(labelElement, select);
+  return wrapper;
+}
+
+function colorInput(label, value, onInput, resetValue) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "field";
+  const labelElement = document.createElement("label");
+  labelElement.textContent = label;
+  const split = document.createElement("div");
+  split.className = "split-field";
+  const color = document.createElement("input");
+  color.type = "color";
+  color.value = value || resetValue;
+  const hex = document.createElement("input");
+  hex.value = value || resetValue;
+  const update = (nextValue) => {
+    color.value = nextValue;
+    hex.value = nextValue;
+    onInput(nextValue);
+    sendPreviewUpdate();
+  };
+  color.addEventListener("input", () => update(color.value));
+  hex.addEventListener("input", () => update(hex.value));
+  split.append(color, hex);
+  const swatches = document.createElement("div");
+  swatches.className = "swatch-row";
+  SWATCHES.forEach((swatchColor) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "swatch";
+    button.style.backgroundColor = swatchColor;
+    button.title = swatchColor;
+    button.addEventListener("click", () => update(swatchColor));
+    swatches.append(button);
+  });
+  const reset = document.createElement("button");
+  reset.type = "button";
+  reset.className = "secondary-button";
+  reset.textContent = "Reset";
+  reset.addEventListener("click", () => update(resetValue));
+  wrapper.append(labelElement, split, swatches, reset);
+  return wrapper;
+}
+
+function renderThemeEditor() {
+  themeEditor.innerHTML = "";
+  themeEditor.append(Object.assign(document.createElement("h2"), { textContent: "Theme Settings" }));
+  THEME_FIELDS.forEach(([key, label, type]) => {
+    if (type === "color") {
+      themeEditor.append(colorInput(label, pageBuilder.theme[key], (value) => { pageBuilder.theme[key] = value; }, THEME_DEFAULTS[key]));
+    } else if (type === "font") {
+      themeEditor.append(selectInput(label, pageBuilder.theme[key], FONTS, (value) => { pageBuilder.theme[key] = value; }));
+    } else {
+      themeEditor.append(simpleInput(label, pageBuilder.theme[key], (value) => { pageBuilder.theme[key] = value; }));
+    }
+  });
+}
+
+function localizeSection(section, key, value) {
+  section[key] = section[key] || {};
+  section[key][selectedLanguage] = value;
+}
+
+function sectionLabel(section, index) {
+  return localized(section.title) || localized(section.heading) || `${section.type} ${index + 1}`;
+}
+
+function currentSections() {
+  pageBuilder.pages[selectedPage] = pageBuilder.pages[selectedPage] || [];
+  return pageBuilder.pages[selectedPage];
+}
+
+function currentSection() {
+  return currentSections()[selectedSectionIndex];
+}
+
+function defaultSection(type = "Text Block") {
+  const base = {
+    id: `section-${Date.now()}`,
+    type,
+    hidden: false,
+    title: { en: type, es: type, zh: type },
+    body: { en: "Add section text here.", es: "Agregue texto de sección aquí.", zh: "在这里添加板块文字。" },
+    backgroundColor: "#F3EBDD",
+    textColor: "#151515",
+    spacing: "72px"
+  };
+  if (type === "Hero Banner") return { ...base, subtitle: base.body, backgroundImage: "assets/images/placeholder-furniture.svg", buttonText: { en: "Request Quote", es: "Solicitar cotización", zh: "询价" }, buttonLink: "contact.html", alignment: "left", height: "560px" };
+  if (type === "Image Banner") return { ...base, image: "assets/images/placeholder-furniture.svg", heading: base.title, buttonText: { en: "View Products", es: "Ver productos", zh: "查看产品" }, buttonLink: "products.html", layout: "image-left" };
+  if (type === "Image Gallery") return { ...base, images: [{ image: "assets/images/placeholder-furniture.svg", caption: { en: "Factory program", es: "Programa de fábrica", zh: "工厂项目" } }] };
+  if (type === "Video Block") return { ...base, videoPath: "", posterImage: "assets/images/placeholder-furniture.svg", heading: base.title };
+  if (type === "CTA Banner") return { ...base, heading: base.title, buttonText: { en: "Contact Us", es: "Contáctenos", zh: "联系我们" }, buttonLink: "contact.html" };
+  if (type === "Feature Cards") return { ...base, cards: [{ title: { en: "Factory Capacity", es: "Capacidad de fábrica", zh: "工厂产能" }, body: { en: "Add feature details.", es: "Agregue detalles.", zh: "添加特点说明。" }, image: "" }] };
+  if (type === "Product Grid") return { ...base, heading: base.title, selectedCategory: "", maxProducts: 6 };
+  if (type === "FAQ Section") return { ...base, items: [{ question: { en: "What is the MOQ?", es: "¿Cuál es el MOQ?", zh: "起订量是多少？" }, answer: { en: "MOQ depends on the product and program.", es: "El MOQ depende del producto y programa.", zh: "起订量取决于产品和项目。" } }] };
+  if (type === "Logo Strip") return { ...base, logos: [{ image: "", alt: { en: "Partner", es: "Socio", zh: "合作伙伴" } }] };
+  if (type === "Custom HTML/Text Block") return { ...base, customHtml: "<p>Custom HTML/text content.</p>" };
+  return base;
+}
+
+function sectionInput(section, key, label, type = "input") {
+  const value = localized(section[key]);
+  return simpleInput(label, value, (nextValue) => localizeSection(section, key, nextValue), type === "textarea" ? "textarea" : "text");
+}
+
+function sectionPlainInput(section, key, label, type = "text") {
+  return simpleInput(label, section[key], (nextValue) => { section[key] = nextValue; }, type);
+}
+
+function sectionColorInput(section, key, label, fallback) {
+  return colorInput(label, section[key] || fallback, (nextValue) => { section[key] = nextValue; }, fallback);
+}
+
+function renderRepeater(section, key, fields, defaultItem) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "nested-editor";
+  wrapper.append(Object.assign(document.createElement("h3"), { textContent: key }));
+  section[key] = section[key] || [];
+  section[key].forEach((item, index) => {
+    const itemBox = document.createElement("div");
+    itemBox.className = "nested-editor";
+    fields.forEach(([fieldKey, label, mode]) => {
+      if (mode === "localized") {
+        itemBox.append(simpleInput(label, localized(item[fieldKey]), (value) => {
+          item[fieldKey] = item[fieldKey] || {};
+          item[fieldKey][selectedLanguage] = value;
+        }, "textarea"));
+      } else {
+        itemBox.append(simpleInput(label, item[fieldKey], (value) => { item[fieldKey] = value; }));
+      }
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "danger-button";
+    remove.textContent = "Remove item";
+    remove.addEventListener("click", () => {
+      section[key].splice(index, 1);
+      renderSectionsEditor();
+      sendPreviewUpdate();
+    });
+    itemBox.append(remove);
+    wrapper.append(itemBox);
+  });
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "secondary-button";
+  add.textContent = `Add ${key} item`;
+  add.addEventListener("click", () => {
+    section[key].push(JSON.parse(JSON.stringify(defaultItem)));
+    renderSectionsEditor();
+    sendPreviewUpdate();
+  });
+  wrapper.append(add);
+  return wrapper;
+}
+
+function renderSectionFields(section) {
+  const fields = document.createElement("div");
+  fields.className = "nested-editor";
+  fields.append(selectInput("Section type", section.type, SECTION_TYPES, (value) => {
+    const next = defaultSection(value);
+    Object.assign(section, { ...next, id: section.id, hidden: section.hidden });
+  }));
+  fields.append(sectionInput(section, "title", "Section title", "textarea"));
+  fields.append(sectionInput(section, "body", "Section body text", "textarea"));
+  fields.append(sectionColorInput(section, "backgroundColor", "Section background color", "#F3EBDD"));
+  fields.append(sectionColorInput(section, "textColor", "Section text color", "#151515"));
+  fields.append(sectionInput(section, "buttonText", "Button text"));
+  fields.append(sectionPlainInput(section, "buttonLink", "Button link"));
+  fields.append(sectionPlainInput(section, "image", "Image path"));
+  fields.append(sectionPlainInput(section, "backgroundImage", "Background image path"));
+  fields.append(sectionPlainInput(section, "videoPath", "Video path"));
+  fields.append(sectionPlainInput(section, "posterImage", "Poster image path"));
+  fields.append(sectionPlainInput(section, "spacing", "Section spacing / padding"));
+  fields.append(selectInput("Alignment", section.alignment || "left", ["left", "center", "right"], (value) => { section.alignment = value; }));
+  fields.append(selectInput("Layout", section.layout || "image-left", ["image-left", "image-right"], (value) => { section.layout = value; }));
+  fields.append(sectionPlainInput(section, "height", "Height"));
+  fields.append(sectionPlainInput(section, "selectedCategory", "Selected category"));
+  fields.append(sectionPlainInput(section, "maxProducts", "Max products", "number"));
+  fields.append(simpleInput("Custom HTML/Text", section.customHtml, (value) => { section.customHtml = value; }, "textarea"));
+  if (section.type === "Image Gallery") fields.append(renderRepeater(section, "images", [["image", "Image path", "plain"], ["caption", "Caption", "localized"]], { image: "assets/images/placeholder-furniture.svg", caption: { en: "Caption", es: "Subtítulo", zh: "说明" } }));
+  if (section.type === "Feature Cards") fields.append(renderRepeater(section, "cards", [["image", "Image path", "plain"], ["title", "Card title", "localized"], ["body", "Card body", "localized"]], { image: "", title: { en: "Feature", es: "Característica", zh: "特点" }, body: { en: "Feature text", es: "Texto", zh: "文字" } }));
+  if (section.type === "FAQ Section") fields.append(renderRepeater(section, "items", [["question", "Question", "localized"], ["answer", "Answer", "localized"]], { question: { en: "Question", es: "Pregunta", zh: "问题" }, answer: { en: "Answer", es: "Respuesta", zh: "答案" } }));
+  if (section.type === "Logo Strip") fields.append(renderRepeater(section, "logos", [["image", "Logo image path", "plain"], ["alt", "Logo label", "localized"]], { image: "", alt: { en: "Logo", es: "Logo", zh: "标志" } }));
+  return fields;
+}
+
+function renderSectionsEditor() {
+  sectionsEditor.innerHTML = "";
+  sectionsEditor.append(Object.assign(document.createElement("h2"), { textContent: "Page Sections" }));
+  const sections = currentSections();
+  const addRow = document.createElement("div");
+  addRow.className = "button-row";
+  const typeSelect = document.createElement("select");
+  SECTION_TYPES.forEach((type) => {
+    const option = document.createElement("option");
+    option.value = type;
+    option.textContent = type;
+    typeSelect.append(option);
+  });
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "secondary-button";
+  add.textContent = "Add section";
+  add.addEventListener("click", () => {
+    sections.push(defaultSection(typeSelect.value));
+    selectedSectionIndex = sections.length - 1;
+    renderSectionsEditor();
+    sendPreviewUpdate();
+  });
+  addRow.append(typeSelect, add);
+  sectionsEditor.append(addRow);
+
+  const list = document.createElement("div");
+  list.className = "section-list";
+  sections.forEach((section, index) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = `section-row${index === selectedSectionIndex ? " is-active" : ""}`;
+    row.innerHTML = `<strong>${sectionLabel(section, index)}</strong><span>${section.type}${section.hidden ? " · Hidden" : ""}</span>`;
+    row.addEventListener("click", () => {
+      selectedSectionIndex = index;
+      renderSectionsEditor();
+    });
+    list.append(row);
+  });
+  sectionsEditor.append(list);
+
+  const section = currentSection();
+  if (!section) return;
+  const actions = document.createElement("div");
+  actions.className = "button-row";
+  [
+    ["Move up", () => {
+      if (selectedSectionIndex <= 0) return;
+      [sections[selectedSectionIndex - 1], sections[selectedSectionIndex]] = [sections[selectedSectionIndex], sections[selectedSectionIndex - 1]];
+      selectedSectionIndex -= 1;
+    }],
+    ["Move down", () => {
+      if (selectedSectionIndex >= sections.length - 1) return;
+      [sections[selectedSectionIndex + 1], sections[selectedSectionIndex]] = [sections[selectedSectionIndex], sections[selectedSectionIndex + 1]];
+      selectedSectionIndex += 1;
+    }],
+    [section.hidden ? "Show" : "Hide", () => { section.hidden = !section.hidden; }],
+    ["Duplicate", () => {
+      sections.splice(selectedSectionIndex + 1, 0, JSON.parse(JSON.stringify({ ...section, id: `section-${Date.now()}` })));
+      selectedSectionIndex += 1;
+    }],
+    ["Delete", () => {
+      sections.splice(selectedSectionIndex, 1);
+      selectedSectionIndex = Math.max(0, selectedSectionIndex - 1);
+    }]
+  ].forEach(([label, handler]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = label === "Delete" ? "danger-button" : "secondary-button";
+    button.textContent = label;
+    button.addEventListener("click", () => {
+      handler();
+      renderSectionsEditor();
+      sendPreviewUpdate();
+    });
+    actions.append(button);
+  });
+  sectionsEditor.append(actions, renderSectionFields(section));
+}
+
 function renderContentFields() {
   contentEditor.innerHTML = "";
   const title = document.createElement("h2");
@@ -155,9 +527,15 @@ function renderContentFields() {
     return;
   }
 
-  SITE_FIELDS[selectedPage].forEach(([key, label, type]) => {
+  (SITE_FIELDS[selectedPage] || []).forEach(([key, label, type]) => {
     contentEditor.append(fieldControl(key, label, type));
   });
+  if (!SITE_FIELDS[selectedPage]) {
+    const note = document.createElement("p");
+    note.className = "help-text";
+    note.textContent = "This page uses shared content and Page Sections. Add or edit sections in the Page Sections panel.";
+    contentEditor.append(note);
+  }
 }
 
 function updateAiDraftPreview() {
@@ -479,13 +857,16 @@ async function saveChanges() {
     }
     await saveGitGatewayFile("data/site-content.json", siteContent, token);
     await saveGitGatewayFile("data/products.json", productData, token);
+    await saveGitGatewayFile("data/page-builder.json", pageBuilder, token);
     statusMessage.textContent = "Saved to GitHub through Git Gateway. Netlify will redeploy from the commits.";
   } catch (error) {
     console.warn(error);
     localStorage.setItem("megaFurnitVisualEditorSiteContent", JSON.stringify(siteContent));
     localStorage.setItem("megaFurnitVisualEditorProducts", JSON.stringify(productData));
+    localStorage.setItem("megaFurnitVisualEditorPageBuilder", JSON.stringify(pageBuilder));
     downloadFile("site-content.json", siteContent);
     downloadFile("products.json", productData);
+    downloadFile("page-builder.json", pageBuilder);
     statusMessage.textContent = "Direct Git Gateway save was not available. Draft saved in this browser and JSON files downloaded. Upload those JSON files through Decap CMS or GitHub.";
   }
 }
@@ -493,23 +874,31 @@ async function saveChanges() {
 function downloadChanges() {
   downloadFile("site-content.json", siteContent);
   downloadFile("products.json", productData);
+  downloadFile("page-builder.json", pageBuilder);
   statusMessage.textContent = "Downloaded updated JSON files.";
 }
 
 async function init() {
-  [siteContent, productData] = await Promise.all([
+  [siteContent, productData, pageBuilder] = await Promise.all([
     loadJson("/data/site-content.json"),
-    loadJson("/data/products.json")
+    loadJson("/data/products.json"),
+    loadOptionalJson("/data/page-builder.json", { theme: { ...THEME_DEFAULTS }, pages: {} })
   ]);
   ensureLanguageObjects();
+  ensurePageBuilder();
   pageSelector.addEventListener("change", () => {
     selectedPage = pageSelector.value;
+    selectedSectionIndex = 0;
     renderContentFields();
+    renderThemeEditor();
+    renderSectionsEditor();
     loadPreviewPage();
   });
   languageSelector.addEventListener("change", () => {
     selectedLanguage = languageSelector.value;
     renderContentFields();
+    renderThemeEditor();
+    renderSectionsEditor();
     sendPreviewUpdate();
   });
   preview.addEventListener("load", sendPreviewUpdate);
@@ -521,6 +910,8 @@ async function init() {
   aiApplyButton.addEventListener("click", applyAiDraft);
   document.querySelector("#desktopPreview").addEventListener("click", () => iframeWrap.className = "iframe-wrap is-desktop");
   document.querySelector("#mobilePreview").addEventListener("click", () => iframeWrap.className = "iframe-wrap is-mobile");
+  renderThemeEditor();
+  renderSectionsEditor();
   renderContentFields();
   loadPreviewPage();
 }

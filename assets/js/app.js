@@ -4,6 +4,7 @@ const WHATSAPP_NUMBER = "8613800000000";
 
 let translations = {};
 let cmsContent = {};
+let pageBuilder = {};
 let products = [];
 let currentLanguage = localStorage.getItem("megaFurnitLang") || DEFAULT_LANGUAGE;
 
@@ -49,6 +50,14 @@ function normalizeProducts(productData) {
   return productData.products || [];
 }
 
+function normalizePageBuilder(builderData) {
+  return {
+    ...builderData,
+    theme: builderData.theme || {},
+    pages: builderData.pages || {}
+  };
+}
+
 function setDocumentLanguage() {
   document.documentElement.lang = currentLanguage === "zh" ? "zh-CN" : currentLanguage;
 }
@@ -77,6 +86,170 @@ function applyCmsContent() {
   document.querySelectorAll("[data-cms]").forEach((element) => {
     element.textContent = cmsText(element.dataset.cms);
   });
+}
+
+function applyThemeSettings() {
+  const theme = pageBuilder.theme || {};
+  const root = document.documentElement;
+  const mappings = {
+    primaryBackground: "--paper",
+    secondaryBackground: "--field",
+    textColor: "--ink",
+    headingColor: "--heading-color",
+    buttonBackground: "--forest",
+    buttonTextColor: "--button-text-color",
+    accentColor: "--brass",
+    cardBackground: "--panel",
+    borderColor: "--line",
+    linkColor: "--link-color",
+    headingFont: "--heading-font",
+    bodyFont: "--body-font",
+    baseFontSize: "--base-font-size",
+    buttonRadius: "--button-radius",
+    cardRadius: "--radius",
+    sectionSpacing: "--section-spacing"
+  };
+  Object.entries(mappings).forEach(([key, variable]) => {
+    if (theme[key]) root.style.setProperty(variable, theme[key]);
+  });
+}
+
+function currentPageKey() {
+  const path = window.location.pathname.split("/").pop() || "index.html";
+  if (path === "index.html" || path === "") return "home";
+  if (path === "product-detail.html") return "product-detail";
+  return path.replace(".html", "");
+}
+
+function sectionText(section, key) {
+  return localized(section?.[key]);
+}
+
+function sectionStyle(section) {
+  const styles = [];
+  if (section.backgroundColor) styles.push(`background-color:${section.backgroundColor}`);
+  if (section.textColor) styles.push(`color:${section.textColor}`);
+  if (section.spacing) styles.push(`padding-top:${section.spacing};padding-bottom:${section.spacing}`);
+  return styles.join(";");
+}
+
+function sectionButton(section) {
+  const text = sectionText(section, "buttonText");
+  const link = section.buttonLink || "#";
+  return text ? `<div class="section-builder-actions"><a class="btn btn-primary" href="${link}">${text}</a></div>` : "";
+}
+
+function renderFeatureCards(section) {
+  const cards = section.cards || [];
+  return `<div class="section-builder-card-grid">${cards.map((card) => `
+    <article class="section-builder-card">
+      ${card.image ? `<img src="${card.image}" alt="${sectionText(card, "title")}">` : ""}
+      <h3>${sectionText(card, "title")}</h3>
+      <p>${sectionText(card, "body")}</p>
+    </article>
+  `).join("")}</div>`;
+}
+
+function renderGallery(section) {
+  const images = section.images || [];
+  return `<div class="section-builder-gallery">${images.map((item) => `
+    <figure>
+      <img src="${item.image || "assets/images/placeholder-furniture.svg"}" alt="${sectionText(item, "caption")}">
+      ${sectionText(item, "caption") ? `<figcaption>${sectionText(item, "caption")}</figcaption>` : ""}
+    </figure>
+  `).join("")}</div>`;
+}
+
+function renderFaq(section) {
+  const items = section.items || [];
+  return `<div class="section-builder-faq">${items.map((item) => `
+    <details>
+      <summary>${sectionText(item, "question")}</summary>
+      <p>${sectionText(item, "answer")}</p>
+    </details>
+  `).join("")}</div>`;
+}
+
+function renderLogoStrip(section) {
+  const logos = section.logos || [];
+  return `<div class="section-builder-logo-strip">${logos.map((logo) => `
+    ${logo.image ? `<img src="${logo.image}" alt="${sectionText(logo, "alt")}">` : `<span>${sectionText(logo, "alt")}</span>`}
+  `).join("")}</div>`;
+}
+
+function renderProductGridSection(section) {
+  const selectedCategory = section.selectedCategory || "";
+  const maxProducts = Number(section.maxProducts || 6);
+  const selected = products
+    .filter((product) => !selectedCategory || product.categoryKey === selectedCategory)
+    .slice(0, maxProducts);
+  return `<div class="product-grid">${selected.map(productCard).join("")}</div>`;
+}
+
+function renderSection(section) {
+  if (!section || section.hidden) return "";
+  const title = sectionText(section, "title") || sectionText(section, "heading");
+  const body = sectionText(section, "body") || sectionText(section, "subtitle");
+  const alignClass = section.alignment ? ` align-${section.alignment}` : "";
+  const style = sectionStyle(section);
+  const image = section.backgroundImage || section.image;
+
+  if (section.type === "Hero Banner") {
+    const heroStyle = `${style};${image ? `background-image:linear-gradient(90deg,rgba(21,21,21,.68),rgba(21,21,21,.22)),url('${image}');` : ""}${section.height ? `min-height:${section.height};` : ""}`;
+    return `<section class="section-builder-section section-builder-hero${alignClass}" style="${heroStyle}">
+      <div class="container"><h2>${title}</h2><p>${body}</p>${sectionButton(section)}</div>
+    </section>`;
+  }
+
+  if (section.type === "Image Banner") {
+    return `<section class="section-builder-section" style="${style}">
+      <div class="container section-builder-split ${section.layout === "image-right" ? "image-right" : ""}">
+        <div>${image ? `<img src="${image}" alt="${title}">` : ""}</div>
+        <div><h2>${title}</h2><p>${body}</p>${sectionButton(section)}</div>
+      </div>
+    </section>`;
+  }
+
+  if (section.type === "Image Gallery") {
+    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2><p>${body}</p>${renderGallery(section)}</div></section>`;
+  }
+
+  if (section.type === "Video Block") {
+    return `<section class="section-builder-section" style="${style}"><div class="container section-builder-video"><h2>${title}</h2><p>${body}</p>${section.videoPath ? `<video controls poster="${section.posterImage || ""}" src="${section.videoPath}"></video>` : ""}</div></section>`;
+  }
+
+  if (section.type === "CTA Banner") {
+    return `<section class="section-builder-section section-builder-cta${alignClass}" style="${style}"><div class="container"><h2>${title}</h2><p>${body}</p>${sectionButton(section)}</div></section>`;
+  }
+
+  if (section.type === "Feature Cards") {
+    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2><p>${body}</p>${renderFeatureCards(section)}</div></section>`;
+  }
+
+  if (section.type === "Product Grid") {
+    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2>${renderProductGridSection(section)}</div></section>`;
+  }
+
+  if (section.type === "FAQ Section") {
+    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2>${renderFaq(section)}</div></section>`;
+  }
+
+  if (section.type === "Logo Strip") {
+    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2>${renderLogoStrip(section)}</div></section>`;
+  }
+
+  return `<section class="section-builder-section${alignClass}" style="${style}"><div class="container"><h2>${title}</h2><p>${body}</p>${section.customHtml || ""}${sectionButton(section)}</div></section>`;
+}
+
+function renderPageSections() {
+  document.querySelector("[data-page-sections]")?.remove();
+  const pageKey = currentPageKey();
+  const sections = pageBuilder.pages?.[pageKey] || [];
+  if (!sections.length) return;
+  const wrapper = document.createElement("div");
+  wrapper.dataset.pageSections = pageKey;
+  wrapper.innerHTML = sections.map(renderSection).join("");
+  document.querySelector("main")?.append(wrapper);
 }
 
 function setupLanguageSwitcher() {
@@ -242,10 +415,12 @@ function setupContactSubject() {
 }
 
 function renderCurrentPage() {
+  applyThemeSettings();
   renderFeaturedProducts();
   renderProductFilters();
   renderProductList();
   renderProductDetail();
+  renderPageSections();
   setupContactSubject();
 }
 
@@ -260,8 +435,12 @@ function applyPreviewState(previewState) {
   if (previewState.productData) {
     products = normalizeProducts(previewState.productData);
   }
+  if (previewState.pageBuilder) {
+    pageBuilder = normalizePageBuilder(previewState.pageBuilder);
+  }
   applyTranslations();
   applyCmsContent();
+  applyThemeSettings();
   setupLanguageSwitcher();
   renderCurrentPage();
 }
@@ -277,13 +456,15 @@ window.MegaFurnitPreview = {
 async function init() {
   currentLanguage = normalizeLanguage(currentLanguage);
   try {
-    const [translationData, productData, cmsData] = await Promise.all([
+    const [translationData, productData, cmsData, builderData] = await Promise.all([
       loadJson("data/translations.json"),
       loadJson("data/products.json"),
-      loadOptionalJson("data/site-content.json")
+      loadOptionalJson("data/site-content.json"),
+      loadOptionalJson("data/page-builder.json")
     ]);
     translations = translationData;
     cmsContent = cmsData;
+    pageBuilder = normalizePageBuilder(builderData);
     products = normalizeProducts(productData);
     applyTranslations();
     applyCmsContent();
