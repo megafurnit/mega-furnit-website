@@ -3,6 +3,7 @@ const DEFAULT_LANGUAGE = "en";
 const WHATSAPP_NUMBER = "8613800000000";
 
 let translations = {};
+let cmsContent = {};
 let products = [];
 let currentLanguage = localStorage.getItem("megaFurnitLang") || DEFAULT_LANGUAGE;
 
@@ -21,8 +22,13 @@ function t(key) {
   return translations[currentLanguage]?.[key] || translations[DEFAULT_LANGUAGE]?.[key] || key;
 }
 
+function cmsText(key) {
+  return cmsContent[currentLanguage]?.[key] || cmsContent[DEFAULT_LANGUAGE]?.[key] || "";
+}
+
 async function loadJson(path) {
-  const response = await fetch(path);
+  const separator = path.includes("?") ? "&" : "?";
+  const response = await fetch(`${path}${separator}v=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Unable to load ${path}`);
   }
@@ -36,17 +42,6 @@ async function loadOptionalJson(path) {
     console.warn(`${path} was not loaded. Using built-in defaults.`);
     return {};
   }
-}
-
-function mergeCmsContent(baseTranslations, cmsContent) {
-  LANGUAGES.forEach((language) => {
-    if (!cmsContent[language]) return;
-    baseTranslations[language] = {
-      ...baseTranslations[language],
-      ...cmsContent[language]
-    };
-  });
-  return baseTranslations;
 }
 
 function normalizeProducts(productData) {
@@ -78,6 +73,12 @@ function applyTranslations() {
   setDocumentLanguage();
 }
 
+function applyCmsContent() {
+  document.querySelectorAll("[data-cms]").forEach((element) => {
+    element.textContent = cmsText(element.dataset.cms);
+  });
+}
+
 function setupLanguageSwitcher() {
   document.querySelectorAll("[data-lang]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.lang === currentLanguage);
@@ -85,6 +86,7 @@ function setupLanguageSwitcher() {
       currentLanguage = normalizeLanguage(button.dataset.lang);
       localStorage.setItem("megaFurnitLang", currentLanguage);
       applyTranslations();
+      applyCmsContent();
       setupLanguageSwitcher();
       renderCurrentPage();
     });
@@ -250,14 +252,16 @@ function renderCurrentPage() {
 async function init() {
   currentLanguage = normalizeLanguage(currentLanguage);
   try {
-    const [translationData, productData, cmsContent] = await Promise.all([
+    const [translationData, productData, cmsData] = await Promise.all([
       loadJson("data/translations.json"),
       loadJson("data/products.json"),
       loadOptionalJson("data/site-content.json")
     ]);
-    translations = mergeCmsContent(translationData, cmsContent);
+    translations = translationData;
+    cmsContent = cmsData;
     products = normalizeProducts(productData);
     applyTranslations();
+    applyCmsContent();
     setupLanguageSwitcher();
     setupMobileNavigation();
     renderCurrentPage();
