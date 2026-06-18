@@ -776,6 +776,9 @@ function downloadFile(filename, data) {
 
 async function currentUserToken() {
   if (!window.netlifyIdentity) return null;
+  if (typeof window.netlifyIdentity.init === "function") {
+    window.netlifyIdentity.init();
+  }
   const user = window.netlifyIdentity.currentUser();
   if (!user) return null;
   return user.jwt(true);
@@ -803,13 +806,15 @@ async function saveGitGatewayFile(path, data, token) {
   const current = await fetch(apiPath, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  if (!current.ok) throw new Error(`Unable to read ${path} from Git Gateway.`);
-  const currentJson = await current.json();
+  if (![200, 404].includes(current.status)) {
+    throw new Error(`Unable to read ${path} from Git Gateway.`);
+  }
+  const currentJson = current.status === 200 ? await current.json() : null;
   const body = {
     message: `Update ${path} from visual editor`,
-    content: toBase64Unicode(JSON.stringify(data, null, 2)),
-    sha: currentJson.sha
+    content: toBase64Unicode(JSON.stringify(data, null, 2))
   };
+  if (currentJson?.sha) body.sha = currentJson.sha;
   const saved = await fetch(apiPath, {
     method: "PUT",
     headers: {
@@ -851,23 +856,24 @@ async function saveChanges() {
   statusMessage.textContent = "Saving...";
   try {
     const token = await currentUserToken();
-    if (!token) throw new Error("Not logged in with Netlify Identity.");
+    if (!token) {
+      statusMessage.textContent = "Please log in with Netlify Identity before saving.";
+      if (window.netlifyIdentity?.open) window.netlifyIdentity.open("login");
+      return;
+    }
     for (const [path, file] of pendingUploads.entries()) {
       await saveGitGatewayAsset(path, file, token);
     }
     await saveGitGatewayFile("data/site-content.json", siteContent, token);
     await saveGitGatewayFile("data/products.json", productData, token);
     await saveGitGatewayFile("data/page-builder.json", pageBuilder, token);
-    statusMessage.textContent = "Saved to GitHub through Git Gateway. Netlify will redeploy from the commits.";
+    statusMessage.textContent = "Saved to GitHub successfully. Netlify will redeploy from the commit.";
   } catch (error) {
     console.warn(error);
     localStorage.setItem("megaFurnitVisualEditorSiteContent", JSON.stringify(siteContent));
     localStorage.setItem("megaFurnitVisualEditorProducts", JSON.stringify(productData));
     localStorage.setItem("megaFurnitVisualEditorPageBuilder", JSON.stringify(pageBuilder));
-    downloadFile("site-content.json", siteContent);
-    downloadFile("products.json", productData);
-    downloadFile("page-builder.json", pageBuilder);
-    statusMessage.textContent = "Direct Git Gateway save was not available. Draft saved in this browser and JSON files downloaded. Upload those JSON files through Decap CMS or GitHub.";
+    statusMessage.textContent = "Git Gateway save failed. Download fallback available.";
   }
 }
 
