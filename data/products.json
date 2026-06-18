@@ -1,742 +1,742 @@
 {
   "products": [
-  {
-    "id": "MF-SF001",
-    "name": {
-      "en": "Hudson Modular Sectional Sofa",
-      "es": "Sofá seccional modular Hudson",
-      "zh": "Hudson 模块组合沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "modern",
-    "style": {
-      "en": "Modern",
-      "es": "Moderno",
-      "zh": "现代"
-    },
-    "dimensions": "3200 x 2100 x 850 mm",
-    "materials": {
-      "en": "Performance fabric, high-density foam, solid wood frame",
-      "es": "Tela de alto rendimiento, espuma de alta densidad, estructura de madera sólida",
-      "zh": "功能布、高密度海绵、实木框架"
-    },
-    "moq": "1 x 40HQ",
-    "fob": true,
-    "loading40hq": "38 sets",
-    "customOptions": {
-      "en": "Fabric, configuration, foam density, legs",
-      "es": "Tela, configuración, densidad de espuma, patas",
-      "zh": "面料、组合方式、海绵密度、脚型"
-    },
-    "description": {
-      "en": "A scalable modular sofa program for container orders and regional stock programs.",
-      "es": "Programa modular escalable para pedidos por contenedor y stock regional.",
-      "zh": "适合整柜订单和区域库存项目的模块化沙发系列。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF002",
-    "name": {
-      "en": "Milan Track Arm Sofa",
-      "es": "Sofá Milan con brazo recto",
-      "zh": "Milan 直扶手沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "contemporary",
-    "style": {
-      "en": "Contemporary",
-      "es": "Contemporáneo",
-      "zh": "当代"
-    },
-    "dimensions": "2200 x 920 x 820 mm",
-    "materials": {
-      "en": "Linen-look fabric, pocket spring seat, plywood frame",
-      "es": "Tela tipo lino, asiento con resortes ensacados, estructura de contrachapado",
-      "zh": "仿亚麻面料、独立袋装弹簧座包、夹板框架"
-    },
-    "moq": "60 pcs",
-    "fob": true,
-    "loading40hq": "92 pcs",
-    "customOptions": {
-      "en": "Fabric color, cushion fill, packaging, label program",
-      "es": "Color de tela, relleno de cojines, empaque, programa de etiqueta",
-      "zh": "面料颜色、坐垫填充、包装、贴牌方案"
-    },
-    "description": {
-      "en": "Clean-lined three-seat sofa designed for wholesale and e-commerce collections.",
-      "es": "Sofá de tres puestos de líneas limpias para mayoristas y e-commerce.",
-      "zh": "线条简洁的三人沙发，适合批发和电商系列。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF003",
-    "name": {
-      "en": "Arden Roll Arm Sofa",
-      "es": "Sofá Arden con brazo redondo",
-      "zh": "Arden 卷扶手沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "classic",
-    "style": {
-      "en": "Classic",
-      "es": "Clásico",
-      "zh": "经典"
-    },
-    "dimensions": "2350 x 960 x 880 mm",
-    "materials": {
-      "en": "Velvet fabric, foam and fiber seat, solid wood legs",
-      "es": "Terciopelo, asiento de espuma y fibra, patas de madera sólida",
-      "zh": "绒布、海绵加纤维座包、实木脚"
-    },
-    "moq": "50 pcs",
-    "fob": true,
-    "loading40hq": "78 pcs",
-    "customOptions": {
-      "en": "Tufting, nailhead trim, fabric, carton marks",
-      "es": "Capitoné, tachuelas, tela, marcas de caja",
-      "zh": "拉扣、铆钉、面料、外箱唛头"
-    },
-    "description": {
-      "en": "A classic upholstery option for retailers seeking a more traditional assortment.",
-      "es": "Opción tapizada clásica para minoristas con surtidos tradicionales.",
-      "zh": "经典软体款，适合偏传统风格的零售产品线。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF004",
-    "name": {
-      "en": "Oslo Compact Apartment Sofa",
-      "es": "Sofá compacto Oslo para apartamento",
-      "zh": "Oslo 小户型沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "scandinavian",
-    "style": {
-      "en": "Scandinavian",
-      "es": "Escandinavo",
-      "zh": "北欧"
-    },
-    "dimensions": "1780 x 860 x 810 mm",
-    "materials": {
-      "en": "Textured polyester fabric, foam seat, rubberwood legs",
-      "es": "Poliéster texturizado, asiento de espuma, patas de madera de caucho",
-      "zh": "纹理涤纶布、海绵座包、橡胶木脚"
-    },
-    "moq": "80 pcs",
-    "fob": true,
-    "loading40hq": "148 pcs",
-    "customOptions": {
-      "en": "Knock-down legs, fabric palette, compression packing",
-      "es": "Patas desmontables, paleta de telas, empaque comprimido",
-      "zh": "可拆脚、面料色卡、压缩包装"
-    },
-    "description": {
-      "en": "Compact proportions optimized for urban retail and online delivery programs.",
-      "es": "Proporciones compactas para retail urbano y programas de entrega online.",
-      "zh": "小巧尺寸，适合城市零售和线上配送项目。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF005",
-    "name": {
-      "en": "Como Chaise Sofa",
-      "es": "Sofá Como con chaise",
-      "zh": "Como 贵妃沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "modern",
-    "style": {
-      "en": "Modern",
-      "es": "Moderno",
-      "zh": "现代"
-    },
-    "dimensions": "2680 x 1680 x 840 mm",
-    "materials": {
-      "en": "Boucle fabric, serpentine spring, engineered wood frame",
-      "es": "Tela boucle, resorte sinuoso, estructura de madera industrializada",
-      "zh": "羊羔绒面料、蛇形弹簧、工程木框架"
-    },
-    "moq": "40 sets",
-    "fob": true,
-    "loading40hq": "54 sets",
-    "customOptions": {
-      "en": "Left or right chaise, fabric, cushion firmness",
-      "es": "Chaise izquierda o derecha, tela, firmeza de cojín",
-      "zh": "左右贵妃、面料、坐垫软硬度"
-    },
-    "description": {
-      "en": "A high-appeal chaise model suitable for coordinated living room programs.",
-      "es": "Modelo con chaise de alta aceptación para programas de sala coordinados.",
-      "zh": "高接受度贵妃款，适合客厅组合系列。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF006",
-    "name": {
-      "en": "Portland Sleeper Sofa",
-      "es": "Sofá cama Portland",
-      "zh": "Portland 沙发床"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "transitional",
-    "style": {
-      "en": "Transitional",
-      "es": "Transicional",
-      "zh": "过渡风"
-    },
-    "dimensions": "2180 x 940 x 860 mm",
-    "materials": {
-      "en": "Polyester fabric, pull-out steel mechanism, foam mattress",
-      "es": "Tela de poliéster, mecanismo extraíble de acero, colchón de espuma",
-      "zh": "涤纶布、抽拉钢架机构、海绵床垫"
-    },
-    "moq": "36 pcs",
-    "fob": true,
-    "loading40hq": "48 pcs",
-    "customOptions": {
-      "en": "Mechanism type, mattress thickness, fabric, carton grade",
-      "es": "Tipo de mecanismo, grosor de colchón, tela, grado de caja",
-      "zh": "机构类型、床垫厚度、面料、纸箱等级"
-    },
-    "description": {
-      "en": "Dual-use sofa bed program for retailers and distributors serving compact homes.",
-      "es": "Programa de sofá cama para minoristas y distribuidores de hogares compactos.",
-      "zh": "两用沙发床系列，服务小户型零售和分销市场。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF007",
-    "name": {
-      "en": "Denver Motion Recliner Sofa",
-      "es": "Sofá reclinable Denver",
-      "zh": "Denver 功能躺椅沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "motion",
-    "style": {
-      "en": "Motion",
-      "es": "Reclinable",
-      "zh": "功能"
-    },
-    "dimensions": "2080 x 980 x 1010 mm",
-    "materials": {
-      "en": "Air leather, metal reclining mechanism, foam and spring support",
-      "es": "Cuero sintético air leather, mecanismo metálico reclinable, soporte de espuma y resortes",
-      "zh": "科技皮、金属躺椅机构、海绵加弹簧支撑"
-    },
-    "moq": "30 pcs",
-    "fob": true,
-    "loading40hq": "44 pcs",
-    "customOptions": {
-      "en": "Manual or power recline, USB, cupholder, upholstery",
-      "es": "Reclinado manual o eléctrico, USB, portavasos, tapizado",
-      "zh": "手动或电动、USB、杯架、包覆材料"
-    },
-    "description": {
-      "en": "Motion sofa platform for importers building comfort-focused assortments.",
-      "es": "Plataforma reclinable para importadores con surtidos orientados al confort.",
-      "zh": "功能沙发平台，适合舒适型产品组合。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF008",
-    "name": {
-      "en": "Lyon Curved Sofa",
-      "es": "Sofá curvo Lyon",
-      "zh": "Lyon 弧形沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "modern",
-    "style": {
-      "en": "Modern",
-      "es": "Moderno",
-      "zh": "现代"
-    },
-    "dimensions": "2550 x 980 x 780 mm",
-    "materials": {
-      "en": "Chenille fabric, shaped foam, reinforced plywood frame",
-      "es": "Chenilla, espuma moldeada, estructura de contrachapado reforzado",
-      "zh": "雪尼尔面料、定型海绵、加强夹板框架"
-    },
-    "moq": "40 pcs",
-    "fob": true,
-    "loading40hq": "62 pcs",
-    "customOptions": {
-      "en": "Radius, fabric, contrast pillows, leg finish",
-      "es": "Radio, tela, cojines contrastantes, acabado de patas",
-      "zh": "弧度、面料、撞色抱枕、脚部饰面"
-    },
-    "description": {
-      "en": "Statement curved sofa for premium collections without consumer-cart positioning.",
-      "es": "Sofá curvo protagonista para colecciones premium B2B.",
-      "zh": "适合高端系列的弧形视觉款沙发。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF009",
-    "name": {
-      "en": "Valencia Leather Sofa",
-      "es": "Sofá Valencia en cuero",
-      "zh": "Valencia 皮沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "premium",
-    "style": {
-      "en": "Premium",
-      "es": "Premium",
-      "zh": "高端"
-    },
-    "dimensions": "2300 x 950 x 850 mm",
-    "materials": {
-      "en": "Top-grain leather touch points, PVC match, hardwood frame",
-      "es": "Cuero flor en zonas de contacto, PVC combinado, estructura de madera dura",
-      "zh": "接触面头层皮、PVC配皮、硬木框架"
-    },
-    "moq": "30 pcs",
-    "fob": true,
-    "loading40hq": "56 pcs",
-    "customOptions": {
-      "en": "Leather grade, stitch detail, seat softness, color",
-      "es": "Grado de cuero, costura, suavidad del asiento, color",
-      "zh": "皮料等级、缝线细节、坐感、颜色"
-    },
-    "description": {
-      "en": "Leather-look value engineering for regional distributors and retailers.",
-      "es": "Ingeniería de valor con apariencia de cuero para distribuidores regionales.",
-      "zh": "面向区域分销和零售的皮感价值工程款。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF010",
-    "name": {
-      "en": "Berlin Loveseat",
-      "es": "Loveseat Berlin",
-      "zh": "Berlin 双人沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "contemporary",
-    "style": {
-      "en": "Contemporary",
-      "es": "Contemporáneo",
-      "zh": "当代"
-    },
-    "dimensions": "1560 x 880 x 820 mm",
-    "materials": {
-      "en": "Microfiber fabric, high-resilience foam, metal legs",
-      "es": "Microfibra, espuma de alta resiliencia, patas metálicas",
-      "zh": "超纤布、高回弹海绵、金属脚"
-    },
-    "moq": "90 pcs",
-    "fob": true,
-    "loading40hq": "168 pcs",
-    "customOptions": {
-      "en": "Fabric, leg color, carton size, private label",
-      "es": "Tela, color de patas, tamaño de caja, marca privada",
-      "zh": "面料、脚色、箱规、贴牌"
-    },
-    "description": {
-      "en": "A compact two-seat item for apartment, student housing, and online channels.",
-      "es": "Producto compacto de dos puestos para apartamentos, estudiantes y canales online.",
-      "zh": "紧凑双人款，适合公寓、学生住房和线上渠道。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF011",
-    "name": {
-      "en": "Napa Deep Seat Sofa",
-      "es": "Sofá Napa de asiento profundo",
-      "zh": "Napa 深坐沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "casual",
-    "style": {
-      "en": "Casual",
-      "es": "Casual",
-      "zh": "休闲"
-    },
-    "dimensions": "2450 x 1100 x 820 mm",
-    "materials": {
-      "en": "Washed fabric, feather-blend cushions, kiln-dried frame",
-      "es": "Tela lavada, cojines con mezcla de pluma, estructura secada al horno",
-      "zh": "水洗布、羽绒混合靠垫、窑干木框架"
-    },
-    "moq": "36 pcs",
-    "fob": true,
-    "loading40hq": "48 pcs",
-    "customOptions": {
-      "en": "Slipcover, cushion blend, fabric wash, depth",
-      "es": "Funda removible, mezcla de cojín, lavado de tela, profundidad",
-      "zh": "可拆套、靠垫填充、面料水洗、坐深"
-    },
-    "description": {
-      "en": "Relaxed deep-seat sofa suitable for premium casual living collections.",
-      "es": "Sofá relajado de asiento profundo para colecciones casuales premium.",
-      "zh": "休闲深坐款，适合高端休闲客厅系列。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-SF012",
-    "name": {
-      "en": "Toronto U-Shaped Sectional",
-      "es": "Seccional en U Toronto",
-      "zh": "Toronto U形组合沙发"
-    },
-    "categoryKey": "sofas",
-    "category": {
-      "en": "Sofas",
-      "es": "Sofás",
-      "zh": "沙发"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "modern",
-    "style": {
-      "en": "Modern",
-      "es": "Moderno",
-      "zh": "现代"
-    },
-    "dimensions": "3650 x 1850 x 850 mm",
-    "materials": {
-      "en": "Performance woven fabric, foam seat, reinforced wood frame",
-      "es": "Tela tejida de alto rendimiento, asiento de espuma, estructura reforzada de madera",
-      "zh": "功能机织布、海绵座包、加固木框架"
-    },
-    "moq": "1 x 40HQ",
-    "fob": true,
-    "loading40hq": "28 sets",
-    "customOptions": {
-      "en": "Modules, ottoman, fabric, packaging plan",
-      "es": "Módulos, otomán, tela, plan de empaque",
-      "zh": "模块、脚踏、面料、包装方案"
-    },
-    "description": {
-      "en": "Large sectional format for container-based importers and stock programs.",
-      "es": "Formato seccional grande para importadores por contenedor y stock.",
-      "zh": "大尺寸组合款，适合整柜进口商和库存项目。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-DT001",
-    "name": {
-      "en": "Alden Solid Wood Dining Table",
-      "es": "Mesa de comedor Alden de madera sólida",
-      "zh": "Alden 实木餐桌"
-    },
-    "categoryKey": "dining",
-    "category": {
-      "en": "Dining",
-      "es": "Comedor",
-      "zh": "餐厅家具"
-    },
-    "factoryType": "solid wood",
-    "styleKey": "classic",
-    "style": {
-      "en": "Classic",
-      "es": "Clásico",
-      "zh": "经典"
-    },
-    "dimensions": "1800 x 900 x 760 mm",
-    "materials": {
-      "en": "Rubberwood and oak veneer, NC finish",
-      "es": "Madera de caucho y chapa de roble, acabado NC",
-      "zh": "橡胶木加橡木贴皮、NC涂装"
-    },
-    "moq": "100 pcs",
-    "fob": true,
-    "loading40hq": "310 pcs",
-    "customOptions": {
-      "en": "Finish color, table size, carton marks",
-      "es": "Color de acabado, tamaño de mesa, marcas de caja",
-      "zh": "涂装颜色、桌子尺寸、外箱唛头"
-    },
-    "description": {
-      "en": "Solid wood dining table program from our wood furniture supply network.",
-      "es": "Programa de mesas de comedor desde nuestra red de muebles de madera.",
-      "zh": "来自木制家具供应网络的实木餐桌系列。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-BD001",
-    "name": {
-      "en": "Marin Upholstered Bed",
-      "es": "Cama tapizada Marin",
-      "zh": "Marin 软包床"
-    },
-    "categoryKey": "bedroom",
-    "category": {
-      "en": "Bedroom",
-      "es": "Dormitorio",
-      "zh": "卧室家具"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "modern",
-    "style": {
-      "en": "Modern",
-      "es": "Moderno",
-      "zh": "现代"
-    },
-    "dimensions": "Queen / King",
-    "materials": {
-      "en": "Fabric upholstery, plywood slats, metal center support",
-      "es": "Tapizado en tela, listones de contrachapado, soporte central metálico",
-      "zh": "布艺软包、夹板排骨架、金属中撑"
-    },
-    "moq": "120 pcs",
-    "fob": true,
-    "loading40hq": "260 pcs",
-    "customOptions": {
-      "en": "Headboard height, fabric, bed size, hardware kit",
-      "es": "Altura de cabecera, tela, tamaño, kit de herrajes",
-      "zh": "床头高度、面料、床型尺寸、五金包"
-    },
-    "description": {
-      "en": "Flat-pack upholstered bed designed for importer and e-commerce programs.",
-      "es": "Cama tapizada flat-pack para programas de importadores y e-commerce.",
-      "zh": "适合进口商和电商项目的软包平板包装床。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-CB001",
-    "name": {
-      "en": "Riverton Panel Storage Cabinet",
-      "es": "Gabinete Riverton de panel",
-      "zh": "Riverton 板式储物柜"
-    },
-    "categoryKey": "storage",
-    "category": {
-      "en": "Storage",
-      "es": "Almacenamiento",
-      "zh": "储物家具"
-    },
-    "factoryType": "panel",
-    "styleKey": "contemporary",
-    "style": {
-      "en": "Contemporary",
-      "es": "Contemporáneo",
-      "zh": "当代"
-    },
-    "dimensions": "1200 x 420 x 780 mm",
-    "materials": {
-      "en": "MDF with melamine finish, metal handles",
-      "es": "MDF con melamina, tiradores metálicos",
-      "zh": "MDF三聚氰胺饰面、金属拉手"
-    },
-    "moq": "200 pcs",
-    "fob": true,
-    "loading40hq": "620 pcs",
-    "customOptions": {
-      "en": "Finish, handle, KD hardware, instruction sheet",
-      "es": "Acabado, tirador, herrajes KD, manual de instrucciones",
-      "zh": "饰面、拉手、KD五金、说明书"
-    },
-    "description": {
-      "en": "Panel furniture cabinet for high-volume retail and online assortments.",
-      "es": "Gabinete de panel para surtidos retail y online de alto volumen.",
-      "zh": "高货量零售和线上渠道板式柜类产品。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-CT001",
-    "name": {
-      "en": "Sierra Coffee Table",
-      "es": "Mesa de centro Sierra",
-      "zh": "Sierra 茶几"
-    },
-    "categoryKey": "living",
-    "category": {
-      "en": "Living Room",
-      "es": "Sala",
-      "zh": "客厅家具"
-    },
-    "factoryType": "panel",
-    "styleKey": "modern",
-    "style": {
-      "en": "Modern",
-      "es": "Moderno",
-      "zh": "现代"
-    },
-    "dimensions": "1100 x 600 x 420 mm",
-    "materials": {
-      "en": "MDF top, powder-coated steel frame",
-      "es": "Cubierta MDF, estructura de acero pintado",
-      "zh": "MDF台面、喷粉钢架"
-    },
-    "moq": "240 pcs",
-    "fob": true,
-    "loading40hq": "880 pcs",
-    "customOptions": {
-      "en": "Top finish, frame color, packaging drop-test grade",
-      "es": "Acabado de cubierta, color de estructura, grado de prueba de caída",
-      "zh": "台面饰面、架子颜色、跌落测试包装等级"
-    },
-    "description": {
-      "en": "Mixed-material coffee table developed for scalable living room programs.",
-      "es": "Mesa de centro de materiales mixtos para programas escalables de sala.",
-      "zh": "混合材料茶几，适合规模化客厅家具项目。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-TV001",
-    "name": {
-      "en": "Monterey TV Stand",
-      "es": "Mueble TV Monterey",
-      "zh": "Monterey 电视柜"
-    },
-    "categoryKey": "living",
-    "category": {
-      "en": "Living Room",
-      "es": "Sala",
-      "zh": "客厅家具"
-    },
-    "factoryType": "panel",
-    "styleKey": "scandinavian",
-    "style": {
-      "en": "Scandinavian",
-      "es": "Escandinavo",
-      "zh": "北欧"
-    },
-    "dimensions": "1600 x 400 x 520 mm",
-    "materials": {
-      "en": "Particle board, paper veneer, rubberwood legs",
-      "es": "Aglomerado, chapa de papel, patas de madera de caucho",
-      "zh": "刨花板、纸贴面、橡胶木脚"
-    },
-    "moq": "180 pcs",
-    "fob": true,
-    "loading40hq": "520 pcs",
-    "customOptions": {
-      "en": "Colorway, leg profile, cable management, hardware pack",
-      "es": "Color, perfil de patas, gestión de cables, kit de herrajes",
-      "zh": "配色、脚型、走线孔、五金包"
-    },
-    "description": {
-      "en": "KD TV stand for retailer programs requiring efficient carton cube.",
-      "es": "Mueble TV KD para programas minoristas con caja eficiente.",
-      "zh": "KD电视柜，适合重视箱规效率的零售项目。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  },
-  {
-    "id": "MF-AC001",
-    "name": {
-      "en": "Geneva Accent Chair",
-      "es": "Silla decorativa Geneva",
-      "zh": "Geneva 休闲椅"
-    },
-    "categoryKey": "chairs",
-    "category": {
-      "en": "Chairs",
-      "es": "Sillas",
-      "zh": "椅类"
-    },
-    "factoryType": "upholstered",
-    "styleKey": "premium",
-    "style": {
-      "en": "Premium",
-      "es": "Premium",
-      "zh": "高端"
-    },
-    "dimensions": "760 x 820 x 780 mm",
-    "materials": {
-      "en": "Boucle fabric, molded foam, swivel metal base",
-      "es": "Tela boucle, espuma moldeada, base giratoria metálica",
-      "zh": "羊羔绒面料、定型海绵、金属旋转底座"
-    },
-    "moq": "120 pcs",
-    "fob": true,
-    "loading40hq": "310 pcs",
-    "customOptions": {
-      "en": "Base color, swivel or fixed, fabric, carton protection",
-      "es": "Color de base, giratoria o fija, tela, protección de caja",
-      "zh": "底座颜色、旋转或固定、面料、纸箱防护"
-    },
-    "description": {
-      "en": "Accent chair item for coordinated living room and bedroom collections.",
-      "es": "Silla decorativa para colecciones coordinadas de sala y dormitorio.",
-      "zh": "适合客厅和卧室配套系列的休闲椅。"
-    },
-    "image": "assets/images/placeholder-furniture.svg"
-  }
+    {
+      "id": "MF-SF001",
+      "name": {
+        "en": "Hudson Modular Sectional Sofa",
+        "es": "Sofá seccional modular Hudson",
+        "zh": "Hudson 模块组合沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "modern",
+      "style": {
+        "en": "Modern",
+        "es": "Moderno",
+        "zh": "现代"
+      },
+      "dimensions": "3200 x 2100 x 850 mm",
+      "materials": {
+        "en": "Performance fabric, high-density foam, solid wood frame",
+        "es": "Tela de alto rendimiento, espuma de alta densidad, estructura de madera sólida",
+        "zh": "功能布、高密度海绵、实木框架"
+      },
+      "moq": "1 x 40HQ",
+      "fob": true,
+      "loading40hq": "38 sets",
+      "customOptions": {
+        "en": "Fabric, configuration, foam density, legs",
+        "es": "Tela, configuración, densidad de espuma, patas",
+        "zh": "面料、组合方式、海绵密度、脚型"
+      },
+      "description": {
+        "en": "A scalable modular sofa program for container orders and regional stock programs.",
+        "es": "Programa modular escalable para pedidos por contenedor y stock regional.",
+        "zh": "适合整柜订单和区域库存项目的模块化沙发系列。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF002",
+      "name": {
+        "en": "Milan Track Arm Sofa",
+        "es": "Sofá Milan con brazo recto",
+        "zh": "Milan 直扶手沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "contemporary",
+      "style": {
+        "en": "Contemporary",
+        "es": "Contemporáneo",
+        "zh": "当代"
+      },
+      "dimensions": "2200 x 920 x 820 mm",
+      "materials": {
+        "en": "Linen-look fabric, pocket spring seat, plywood frame",
+        "es": "Tela tipo lino, asiento con resortes ensacados, estructura de contrachapado",
+        "zh": "仿亚麻面料、独立袋装弹簧座包、夹板框架"
+      },
+      "moq": "60 pcs",
+      "fob": true,
+      "loading40hq": "92 pcs",
+      "customOptions": {
+        "en": "Fabric color, cushion fill, packaging, label program",
+        "es": "Color de tela, relleno de cojines, empaque, programa de etiqueta",
+        "zh": "面料颜色、坐垫填充、包装、贴牌方案"
+      },
+      "description": {
+        "en": "Clean-lined three-seat sofa designed for wholesale and e-commerce collections.",
+        "es": "Sofá de tres puestos de líneas limpias para mayoristas y e-commerce.",
+        "zh": "线条简洁的三人沙发，适合批发和电商系列。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF003",
+      "name": {
+        "en": "Arden Roll Arm Sofa",
+        "es": "Sofá Arden con brazo redondo",
+        "zh": "Arden 卷扶手沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "classic",
+      "style": {
+        "en": "Classic",
+        "es": "Clásico",
+        "zh": "经典"
+      },
+      "dimensions": "2350 x 960 x 880 mm",
+      "materials": {
+        "en": "Velvet fabric, foam and fiber seat, solid wood legs",
+        "es": "Terciopelo, asiento de espuma y fibra, patas de madera sólida",
+        "zh": "绒布、海绵加纤维座包、实木脚"
+      },
+      "moq": "50 pcs",
+      "fob": true,
+      "loading40hq": "78 pcs",
+      "customOptions": {
+        "en": "Tufting, nailhead trim, fabric, carton marks",
+        "es": "Capitoné, tachuelas, tela, marcas de caja",
+        "zh": "拉扣、铆钉、面料、外箱唛头"
+      },
+      "description": {
+        "en": "A classic upholstery option for retailers seeking a more traditional assortment.",
+        "es": "Opción tapizada clásica para minoristas con surtidos tradicionales.",
+        "zh": "经典软体款，适合偏传统风格的零售产品线。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF004",
+      "name": {
+        "en": "Oslo Compact Apartment Sofa",
+        "es": "Sofá compacto Oslo para apartamento",
+        "zh": "Oslo 小户型沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "scandinavian",
+      "style": {
+        "en": "Scandinavian",
+        "es": "Escandinavo",
+        "zh": "北欧"
+      },
+      "dimensions": "1780 x 860 x 810 mm",
+      "materials": {
+        "en": "Textured polyester fabric, foam seat, rubberwood legs",
+        "es": "Poliéster texturizado, asiento de espuma, patas de madera de caucho",
+        "zh": "纹理涤纶布、海绵座包、橡胶木脚"
+      },
+      "moq": "80 pcs",
+      "fob": true,
+      "loading40hq": "148 pcs",
+      "customOptions": {
+        "en": "Knock-down legs, fabric palette, compression packing",
+        "es": "Patas desmontables, paleta de telas, empaque comprimido",
+        "zh": "可拆脚、面料色卡、压缩包装"
+      },
+      "description": {
+        "en": "Compact proportions optimized for urban retail and online delivery programs.",
+        "es": "Proporciones compactas para retail urbano y programas de entrega online.",
+        "zh": "小巧尺寸，适合城市零售和线上配送项目。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF005",
+      "name": {
+        "en": "Como Chaise Sofa",
+        "es": "Sofá Como con chaise",
+        "zh": "Como 贵妃沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "modern",
+      "style": {
+        "en": "Modern",
+        "es": "Moderno",
+        "zh": "现代"
+      },
+      "dimensions": "2680 x 1680 x 840 mm",
+      "materials": {
+        "en": "Boucle fabric, serpentine spring, engineered wood frame",
+        "es": "Tela boucle, resorte sinuoso, estructura de madera industrializada",
+        "zh": "羊羔绒面料、蛇形弹簧、工程木框架"
+      },
+      "moq": "40 sets",
+      "fob": true,
+      "loading40hq": "54 sets",
+      "customOptions": {
+        "en": "Left or right chaise, fabric, cushion firmness",
+        "es": "Chaise izquierda o derecha, tela, firmeza de cojín",
+        "zh": "左右贵妃、面料、坐垫软硬度"
+      },
+      "description": {
+        "en": "A high-appeal chaise model suitable for coordinated living room programs.",
+        "es": "Modelo con chaise de alta aceptación para programas de sala coordinados.",
+        "zh": "高接受度贵妃款，适合客厅组合系列。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF006",
+      "name": {
+        "en": "Portland Sleeper Sofa",
+        "es": "Sofá cama Portland",
+        "zh": "Portland 沙发床"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "transitional",
+      "style": {
+        "en": "Transitional",
+        "es": "Transicional",
+        "zh": "过渡风"
+      },
+      "dimensions": "2180 x 940 x 860 mm",
+      "materials": {
+        "en": "Polyester fabric, pull-out steel mechanism, foam mattress",
+        "es": "Tela de poliéster, mecanismo extraíble de acero, colchón de espuma",
+        "zh": "涤纶布、抽拉钢架机构、海绵床垫"
+      },
+      "moq": "36 pcs",
+      "fob": true,
+      "loading40hq": "48 pcs",
+      "customOptions": {
+        "en": "Mechanism type, mattress thickness, fabric, carton grade",
+        "es": "Tipo de mecanismo, grosor de colchón, tela, grado de caja",
+        "zh": "机构类型、床垫厚度、面料、纸箱等级"
+      },
+      "description": {
+        "en": "Dual-use sofa bed program for retailers and distributors serving compact homes.",
+        "es": "Programa de sofá cama para minoristas y distribuidores de hogares compactos.",
+        "zh": "两用沙发床系列，服务小户型零售和分销市场。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF007",
+      "name": {
+        "en": "Denver Motion Recliner Sofa",
+        "es": "Sofá reclinable Denver",
+        "zh": "Denver 功能躺椅沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "motion",
+      "style": {
+        "en": "Motion",
+        "es": "Reclinable",
+        "zh": "功能"
+      },
+      "dimensions": "2080 x 980 x 1010 mm",
+      "materials": {
+        "en": "Air leather, metal reclining mechanism, foam and spring support",
+        "es": "Cuero sintético air leather, mecanismo metálico reclinable, soporte de espuma y resortes",
+        "zh": "科技皮、金属躺椅机构、海绵加弹簧支撑"
+      },
+      "moq": "30 pcs",
+      "fob": true,
+      "loading40hq": "44 pcs",
+      "customOptions": {
+        "en": "Manual or power recline, USB, cupholder, upholstery",
+        "es": "Reclinado manual o eléctrico, USB, portavasos, tapizado",
+        "zh": "手动或电动、USB、杯架、包覆材料"
+      },
+      "description": {
+        "en": "Motion sofa platform for importers building comfort-focused assortments.",
+        "es": "Plataforma reclinable para importadores con surtidos orientados al confort.",
+        "zh": "功能沙发平台，适合舒适型产品组合。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF008",
+      "name": {
+        "en": "Lyon Curved Sofa",
+        "es": "Sofá curvo Lyon",
+        "zh": "Lyon 弧形沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "modern",
+      "style": {
+        "en": "Modern",
+        "es": "Moderno",
+        "zh": "现代"
+      },
+      "dimensions": "2550 x 980 x 780 mm",
+      "materials": {
+        "en": "Chenille fabric, shaped foam, reinforced plywood frame",
+        "es": "Chenilla, espuma moldeada, estructura de contrachapado reforzado",
+        "zh": "雪尼尔面料、定型海绵、加强夹板框架"
+      },
+      "moq": "40 pcs",
+      "fob": true,
+      "loading40hq": "62 pcs",
+      "customOptions": {
+        "en": "Radius, fabric, contrast pillows, leg finish",
+        "es": "Radio, tela, cojines contrastantes, acabado de patas",
+        "zh": "弧度、面料、撞色抱枕、脚部饰面"
+      },
+      "description": {
+        "en": "Statement curved sofa for premium collections without consumer-cart positioning.",
+        "es": "Sofá curvo protagonista para colecciones premium B2B.",
+        "zh": "适合高端系列的弧形视觉款沙发。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF009",
+      "name": {
+        "en": "Valencia Leather Sofa",
+        "es": "Sofá Valencia en cuero",
+        "zh": "Valencia 皮沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "premium",
+      "style": {
+        "en": "Premium",
+        "es": "Premium",
+        "zh": "高端"
+      },
+      "dimensions": "2300 x 950 x 850 mm",
+      "materials": {
+        "en": "Top-grain leather touch points, PVC match, hardwood frame",
+        "es": "Cuero flor en zonas de contacto, PVC combinado, estructura de madera dura",
+        "zh": "接触面头层皮、PVC配皮、硬木框架"
+      },
+      "moq": "30 pcs",
+      "fob": true,
+      "loading40hq": "56 pcs",
+      "customOptions": {
+        "en": "Leather grade, stitch detail, seat softness, color",
+        "es": "Grado de cuero, costura, suavidad del asiento, color",
+        "zh": "皮料等级、缝线细节、坐感、颜色"
+      },
+      "description": {
+        "en": "Leather-look value engineering for regional distributors and retailers.",
+        "es": "Ingeniería de valor con apariencia de cuero para distribuidores regionales.",
+        "zh": "面向区域分销和零售的皮感价值工程款。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF010",
+      "name": {
+        "en": "Berlin Loveseat",
+        "es": "Loveseat Berlin",
+        "zh": "Berlin 双人沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "contemporary",
+      "style": {
+        "en": "Contemporary",
+        "es": "Contemporáneo",
+        "zh": "当代"
+      },
+      "dimensions": "1560 x 880 x 820 mm",
+      "materials": {
+        "en": "Microfiber fabric, high-resilience foam, metal legs",
+        "es": "Microfibra, espuma de alta resiliencia, patas metálicas",
+        "zh": "超纤布、高回弹海绵、金属脚"
+      },
+      "moq": "90 pcs",
+      "fob": true,
+      "loading40hq": "168 pcs",
+      "customOptions": {
+        "en": "Fabric, leg color, carton size, private label",
+        "es": "Tela, color de patas, tamaño de caja, marca privada",
+        "zh": "面料、脚色、箱规、贴牌"
+      },
+      "description": {
+        "en": "A compact two-seat item for apartment, student housing, and online channels.",
+        "es": "Producto compacto de dos puestos para apartamentos, estudiantes y canales online.",
+        "zh": "紧凑双人款，适合公寓、学生住房和线上渠道。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF011",
+      "name": {
+        "en": "Napa Deep Seat Sofa",
+        "es": "Sofá Napa de asiento profundo",
+        "zh": "Napa 深坐沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "casual",
+      "style": {
+        "en": "Casual",
+        "es": "Casual",
+        "zh": "休闲"
+      },
+      "dimensions": "2450 x 1100 x 820 mm",
+      "materials": {
+        "en": "Washed fabric, feather-blend cushions, kiln-dried frame",
+        "es": "Tela lavada, cojines con mezcla de pluma, estructura secada al horno",
+        "zh": "水洗布、羽绒混合靠垫、窑干木框架"
+      },
+      "moq": "36 pcs",
+      "fob": true,
+      "loading40hq": "48 pcs",
+      "customOptions": {
+        "en": "Slipcover, cushion blend, fabric wash, depth",
+        "es": "Funda removible, mezcla de cojín, lavado de tela, profundidad",
+        "zh": "可拆套、靠垫填充、面料水洗、坐深"
+      },
+      "description": {
+        "en": "Relaxed deep-seat sofa suitable for premium casual living collections.",
+        "es": "Sofá relajado de asiento profundo para colecciones casuales premium.",
+        "zh": "休闲深坐款，适合高端休闲客厅系列。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-SF012",
+      "name": {
+        "en": "Toronto U-Shaped Sectional",
+        "es": "Seccional en U Toronto",
+        "zh": "Toronto U形组合沙发"
+      },
+      "categoryKey": "sofas",
+      "category": {
+        "en": "Sofas",
+        "es": "Sofás",
+        "zh": "沙发"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "modern",
+      "style": {
+        "en": "Modern",
+        "es": "Moderno",
+        "zh": "现代"
+      },
+      "dimensions": "3650 x 1850 x 850 mm",
+      "materials": {
+        "en": "Performance woven fabric, foam seat, reinforced wood frame",
+        "es": "Tela tejida de alto rendimiento, asiento de espuma, estructura reforzada de madera",
+        "zh": "功能机织布、海绵座包、加固木框架"
+      },
+      "moq": "1 x 40HQ",
+      "fob": true,
+      "loading40hq": "28 sets",
+      "customOptions": {
+        "en": "Modules, ottoman, fabric, packaging plan",
+        "es": "Módulos, otomán, tela, plan de empaque",
+        "zh": "模块、脚踏、面料、包装方案"
+      },
+      "description": {
+        "en": "Large sectional format for container-based importers and stock programs.",
+        "es": "Formato seccional grande para importadores por contenedor y stock.",
+        "zh": "大尺寸组合款，适合整柜进口商和库存项目。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-DT001",
+      "name": {
+        "en": "Alden Solid Wood Dining Table",
+        "es": "Mesa de comedor Alden de madera sólida",
+        "zh": "Alden 实木餐桌"
+      },
+      "categoryKey": "dining",
+      "category": {
+        "en": "Dining",
+        "es": "Comedor",
+        "zh": "餐厅家具"
+      },
+      "factoryType": "solid wood",
+      "styleKey": "classic",
+      "style": {
+        "en": "Classic",
+        "es": "Clásico",
+        "zh": "经典"
+      },
+      "dimensions": "1800 x 900 x 760 mm",
+      "materials": {
+        "en": "Rubberwood and oak veneer, NC finish",
+        "es": "Madera de caucho y chapa de roble, acabado NC",
+        "zh": "橡胶木加橡木贴皮、NC涂装"
+      },
+      "moq": "100 pcs",
+      "fob": true,
+      "loading40hq": "310 pcs",
+      "customOptions": {
+        "en": "Finish color, table size, carton marks",
+        "es": "Color de acabado, tamaño de mesa, marcas de caja",
+        "zh": "涂装颜色、桌子尺寸、外箱唛头"
+      },
+      "description": {
+        "en": "Solid wood dining table program from our wood furniture supply network.",
+        "es": "Programa de mesas de comedor desde nuestra red de muebles de madera.",
+        "zh": "来自木制家具供应网络的实木餐桌系列。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-BD001",
+      "name": {
+        "en": "Marin Upholstered Bed",
+        "es": "Cama tapizada Marin",
+        "zh": "Marin 软包床"
+      },
+      "categoryKey": "bedroom",
+      "category": {
+        "en": "Bedroom",
+        "es": "Dormitorio",
+        "zh": "卧室家具"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "modern",
+      "style": {
+        "en": "Modern",
+        "es": "Moderno",
+        "zh": "现代"
+      },
+      "dimensions": "Queen / King",
+      "materials": {
+        "en": "Fabric upholstery, plywood slats, metal center support",
+        "es": "Tapizado en tela, listones de contrachapado, soporte central metálico",
+        "zh": "布艺软包、夹板排骨架、金属中撑"
+      },
+      "moq": "120 pcs",
+      "fob": true,
+      "loading40hq": "260 pcs",
+      "customOptions": {
+        "en": "Headboard height, fabric, bed size, hardware kit",
+        "es": "Altura de cabecera, tela, tamaño, kit de herrajes",
+        "zh": "床头高度、面料、床型尺寸、五金包"
+      },
+      "description": {
+        "en": "Flat-pack upholstered bed designed for importer and e-commerce programs.",
+        "es": "Cama tapizada flat-pack para programas de importadores y e-commerce.",
+        "zh": "适合进口商和电商项目的软包平板包装床。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-CB001",
+      "name": {
+        "en": "Riverton Panel Storage Cabinet",
+        "es": "Gabinete Riverton de panel",
+        "zh": "Riverton 板式储物柜"
+      },
+      "categoryKey": "storage",
+      "category": {
+        "en": "Storage",
+        "es": "Almacenamiento",
+        "zh": "储物家具"
+      },
+      "factoryType": "panel",
+      "styleKey": "contemporary",
+      "style": {
+        "en": "Contemporary",
+        "es": "Contemporáneo",
+        "zh": "当代"
+      },
+      "dimensions": "1200 x 420 x 780 mm",
+      "materials": {
+        "en": "MDF with melamine finish, metal handles",
+        "es": "MDF con melamina, tiradores metálicos",
+        "zh": "MDF三聚氰胺饰面、金属拉手"
+      },
+      "moq": "200 pcs",
+      "fob": true,
+      "loading40hq": "620 pcs",
+      "customOptions": {
+        "en": "Finish, handle, KD hardware, instruction sheet",
+        "es": "Acabado, tirador, herrajes KD, manual de instrucciones",
+        "zh": "饰面、拉手、KD五金、说明书"
+      },
+      "description": {
+        "en": "Panel furniture cabinet for high-volume retail and online assortments.",
+        "es": "Gabinete de panel para surtidos retail y online de alto volumen.",
+        "zh": "高货量零售和线上渠道板式柜类产品。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-CT001",
+      "name": {
+        "en": "Sierra Coffee Table",
+        "es": "Mesa de centro Sierra",
+        "zh": "Sierra 茶几"
+      },
+      "categoryKey": "living",
+      "category": {
+        "en": "Living Room",
+        "es": "Sala",
+        "zh": "客厅家具"
+      },
+      "factoryType": "panel",
+      "styleKey": "modern",
+      "style": {
+        "en": "Modern",
+        "es": "Moderno",
+        "zh": "现代"
+      },
+      "dimensions": "1100 x 600 x 420 mm",
+      "materials": {
+        "en": "MDF top, powder-coated steel frame",
+        "es": "Cubierta MDF, estructura de acero pintado",
+        "zh": "MDF台面、喷粉钢架"
+      },
+      "moq": "240 pcs",
+      "fob": true,
+      "loading40hq": "880 pcs",
+      "customOptions": {
+        "en": "Top finish, frame color, packaging drop-test grade",
+        "es": "Acabado de cubierta, color de estructura, grado de prueba de caída",
+        "zh": "台面饰面、架子颜色、跌落测试包装等级"
+      },
+      "description": {
+        "en": "Mixed-material coffee table developed for scalable living room programs.",
+        "es": "Mesa de centro de materiales mixtos para programas escalables de sala.",
+        "zh": "混合材料茶几，适合规模化客厅家具项目。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-TV001",
+      "name": {
+        "en": "Monterey TV Stand",
+        "es": "Mueble TV Monterey",
+        "zh": "Monterey 电视柜"
+      },
+      "categoryKey": "living",
+      "category": {
+        "en": "Living Room",
+        "es": "Sala",
+        "zh": "客厅家具"
+      },
+      "factoryType": "panel",
+      "styleKey": "scandinavian",
+      "style": {
+        "en": "Scandinavian",
+        "es": "Escandinavo",
+        "zh": "北欧"
+      },
+      "dimensions": "1600 x 400 x 520 mm",
+      "materials": {
+        "en": "Particle board, paper veneer, rubberwood legs",
+        "es": "Aglomerado, chapa de papel, patas de madera de caucho",
+        "zh": "刨花板、纸贴面、橡胶木脚"
+      },
+      "moq": "180 pcs",
+      "fob": true,
+      "loading40hq": "520 pcs",
+      "customOptions": {
+        "en": "Colorway, leg profile, cable management, hardware pack",
+        "es": "Color, perfil de patas, gestión de cables, kit de herrajes",
+        "zh": "配色、脚型、走线孔、五金包"
+      },
+      "description": {
+        "en": "KD TV stand for retailer programs requiring efficient carton cube.",
+        "es": "Mueble TV KD para programas minoristas con caja eficiente.",
+        "zh": "KD电视柜，适合重视箱规效率的零售项目。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    },
+    {
+      "id": "MF-AC001",
+      "name": {
+        "en": "Geneva Accent Chair",
+        "es": "Silla decorativa Geneva",
+        "zh": "Geneva 休闲椅"
+      },
+      "categoryKey": "chairs",
+      "category": {
+        "en": "Chairs",
+        "es": "Sillas",
+        "zh": "椅类"
+      },
+      "factoryType": "upholstered",
+      "styleKey": "premium",
+      "style": {
+        "en": "Premium",
+        "es": "Premium",
+        "zh": "高端"
+      },
+      "dimensions": "760 x 820 x 780 mm",
+      "materials": {
+        "en": "Boucle fabric, molded foam, swivel metal base",
+        "es": "Tela boucle, espuma moldeada, base giratoria metálica",
+        "zh": "羊羔绒面料、定型海绵、金属旋转底座"
+      },
+      "moq": "120 pcs",
+      "fob": true,
+      "loading40hq": "310 pcs",
+      "customOptions": {
+        "en": "Base color, swivel or fixed, fabric, carton protection",
+        "es": "Color de base, giratoria o fija, tela, protección de caja",
+        "zh": "底座颜色、旋转或固定、面料、纸箱防护"
+      },
+      "description": {
+        "en": "Accent chair item for coordinated living room and bedroom collections.",
+        "es": "Silla decorativa para colecciones coordinadas de sala y dormitorio.",
+        "zh": "适合客厅和卧室配套系列的休闲椅。"
+      },
+      "image": "assets/images/placeholder-furniture.svg"
+    }
   ]
 }
