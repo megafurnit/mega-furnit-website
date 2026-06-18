@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mega Furnit | B2B Furniture Manufacturing & Supply Chain</title>
+  <meta name="description" content="Mega Furnit is a B2B furniture manufacturing and supply chain partner with owned factories in China and Vietnam plus a 50+ factory supply network.">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav container" aria-label="Primary navigation">
+      <a class="brand" href="index.html"><strong>Mega Furnit</strong><span data-i18n="brandTagline">Integrated Furniture Manufacturing & Supply Chain</span></a>
+      <button class="btn btn-secondary mobile-toggle" data-mobile-toggle type="button" data-i18n="menu">Menu</button>
+      <div class="nav-links">
+        <a href="index.html" data-i18n="navHome">Home</a>
+        <a href="products.html" data-i18n="navProducts">Products</a>
+        <a href="capabilities.html" data-i18n="navCapabilities">Capabilities</a>
+        <a href="about.html" data-i18n="navAbout">About</a>
+        <a href="contact.html" data-i18n="navContact">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <div class="language-switcher" aria-label="Language switcher">
+          <button type="button" data-lang="en">EN</button>
+          <button type="button" data-lang="es">ES</button>
+          <button type="button" data-lang="zh">中文</button>
+        </div>
+        <a class="btn btn-primary" href="contact.html" data-i18n="requestQuote">Request Quote</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-content">
+        <p class="eyebrow" data-i18n="heroEyebrow">B2B furniture supply for global buyers</p>
+        <h1 data-i18n="heroTitle">Factory-backed furniture programs for importers, wholesalers, retailers, and distributors.</h1>
+        <p data-i18n="heroText">Mega Furnit combines owned production in China and Vietnam with a vetted 50+ factory supply network for FOB container orders and regional stock programs.</p>
+        <div class="hero-actions">
+          <a class="btn btn-accent" href="products.html" data-i18n="viewProducts">View Products</a>
+          <a class="btn btn-secondary" href="contact.html" data-i18n="requestQuote">Request Quote</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="metric-band">
+      <div class="container metrics">
+        <div class="metric"><strong>4</strong><span data-i18n="ownedFactories">Owned factories</span></div>
+        <div class="metric"><strong>50+</strong><span data-i18n="partnerFactories">Partner factories</span></div>
+        <div class="metric"><strong>3</strong><span data-i18n="regionalPrograms">Regional stock programs</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <h2 data-i18n="trustTitle">Built for professional furniture sourcing</h2>
+          <p class="lead" data-i18n="trustText">We support B2B buyers with coordinated manufacturing, product development, packaging, loading plans, and inquiry-based sales. No carts, no checkout, no retail distractions.</p>
+        </div>
+        <div class="capability-grid">
+          <article class="capability-item"><span class="number">01</span><h3 data-i18n="capabilityOne">Upholstered furniture</h3><p data-i18n="capabilityOneText">Fabric sofas, beds, accent chairs, recliners, and modular upholstery programs.</p></article>
+          <article class="capability-item"><span class="number">02</span><h3 data-i18n="capabilityTwo">Panel furniture</h3><p data-i18n="capabilityTwoText">KD storage, TV stands, tables, bedroom, and living room furniture at volume.</p></article>
+          <article class="capability-item"><span class="number">03</span><h3 data-i18n="capabilityThree">Solid wood furniture</h3><p data-i18n="capabilityThreeText">Dining, bedroom, and occasional programs from selected wood furniture capacity.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-head">
+          <h2 data-i18n="featuredProducts">Featured product programs</h2>
+          <p class="lead" data-i18n="productsIntro">Browse sample programs prepared for container-based B2B sourcing. Product data is loaded from the JSON database.</p>
+        </div>
+        <div class="product-grid" data-featured-products></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <h2 data-i18n="supplyTitle">One partner for factory production and supply chain execution</h2>
+          <p class="lead" data-i18n="supplyText">Our team aligns product specification, factory allocation, QC coordination, export documentation, and container loading for buyers in North America, Europe, and Latin America.</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="contact.html" data-i18n="bookMeeting">Book a Meeting</a>
+          <a class="btn btn-secondary" href="catalog.html" data-i18n="downloadCatalog">Download Catalog</a>
+          <a class="btn btn-secondary" target="_blank" rel="noopener" href="https://wa.me/8613800000000" data-i18n="whatsapp">WhatsApp</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div><strong>Mega Furnit</strong><p data-i18n="footerText">B2B furniture manufacturing, supply chain, and FOB container programs.</p></div>
+      <span data-i18n="regionText">Serving North America, Europe, and Latin America</span>
+    </div>
+  </footer>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", (user) => {
+        if (!user) {
+          window.netlifyIdentity.on("login", () => {
+            document.location.href = "/admin/";
+          });
+        }
+      });
+    }
+  </script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

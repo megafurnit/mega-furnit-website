@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mega Furnit | Thank You</title>
+  <meta name="description" content="Thank you for contacting Mega Furnit. Our B2B furniture sourcing team will review your inquiry and respond with next steps.">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav container" aria-label="Primary navigation">
+      <a class="brand" href="index.html"><strong>Mega Furnit</strong><span data-i18n="brandTagline">Integrated Furniture Manufacturing & Supply Chain</span></a>
+      <button class="btn btn-secondary mobile-toggle" data-mobile-toggle type="button" data-i18n="menu">Menu</button>
+      <div class="nav-links">
+        <a href="index.html" data-i18n="navHome">Home</a><a href="products.html" data-i18n="navProducts">Products</a><a href="capabilities.html" data-i18n="navCapabilities">Capabilities</a><a href="about.html" data-i18n="navAbout">About</a><a href="contact.html" data-i18n="navContact">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <div class="language-switcher"><button type="button" data-lang="en">EN</button><button type="button" data-lang="es">ES</button><button type="button" data-lang="zh">中文</button></div>
+        <a class="btn btn-primary" href="contact.html" data-i18n="requestQuote">Request Quote</a>
+      </div>
+    </nav>
+  </header>
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <h1>Thank You</h1>
+        <p class="lead">Your inquiry has been received. Our team will review your request and respond with next steps.</p>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <div class="cta-row">
+          <a class="btn btn-primary" href="products.html" data-i18n="viewProducts">View Products</a>
+          <a class="btn btn-secondary" href="index.html" data-i18n="navHome">Home</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container footer-inner"><div><strong>Mega Furnit</strong><p data-i18n="footerText">B2B furniture manufacturing, supply chain, and FOB container programs.</p></div><span data-i18n="regionText">Serving North America, Europe, and Latin America</span></div></footer>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", (user) => {
+        if (!user) {
+          window.netlifyIdentity.on("login", () => {
+            document.location.href = "/admin/";
+          });
+        }
+      });
+    }
+  </script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
