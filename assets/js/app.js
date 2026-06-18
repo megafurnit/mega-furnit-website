@@ -249,6 +249,31 @@ function renderCurrentPage() {
   setupContactSubject();
 }
 
+function applyPreviewState(previewState) {
+  if (!previewState || previewState.type !== "mega-furnit-preview") return;
+  if (previewState.language) {
+    currentLanguage = normalizeLanguage(previewState.language);
+  }
+  if (previewState.cmsContent) {
+    cmsContent = previewState.cmsContent;
+  }
+  if (previewState.productData) {
+    products = normalizeProducts(previewState.productData);
+  }
+  applyTranslations();
+  applyCmsContent();
+  setupLanguageSwitcher();
+  renderCurrentPage();
+}
+
+window.addEventListener("message", (event) => {
+  applyPreviewState(event.data);
+});
+
+window.MegaFurnitPreview = {
+  apply: applyPreviewState
+};
+
 async function init() {
   currentLanguage = normalizeLanguage(currentLanguage);
   try {
