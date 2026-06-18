@@ -37,6 +37,21 @@
         </select>
       </section>
 
+      <section class="editor-panel ai-panel">
+        <h2>AI Assistant</h2>
+        <div class="field">
+          <label for="aiInstructions">Instructions</label>
+          <textarea id="aiInstructions" placeholder="Example: Make this sound more professional for B2B furniture importers."></textarea>
+        </div>
+        <div class="ai-actions">
+          <button class="secondary-button" id="aiImproveButton" type="button">Improve current page copy</button>
+          <button class="secondary-button" id="aiTranslateButton" type="button">Translate current language to EN/ES/ZH</button>
+          <button class="secondary-button" id="aiProductDescriptionButton" type="button">Generate product description</button>
+          <button class="primary-button" id="aiApplyButton" type="button" disabled>Apply AI draft to editor fields</button>
+        </div>
+        <pre id="aiDraftPreview">No AI draft yet.</pre>
+      </section>
+
       <section class="editor-panel" id="contentEditor"></section>
 
       <footer class="editor-footer">

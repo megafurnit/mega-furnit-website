@@ -51,6 +51,7 @@ let selectedPage = "home";
 let selectedLanguage = "en";
 let selectedProductIndex = 0;
 let pendingUploads = new Map();
+let aiDraft = null;
 
 const pageSelector = document.querySelector("#pageSelector");
 const languageSelector = document.querySelector("#languageSelector");
@@ -59,6 +60,9 @@ const preview = document.querySelector("#sitePreview");
 const previewTitle = document.querySelector("#previewTitle");
 const statusMessage = document.querySelector("#statusMessage");
 const iframeWrap = document.querySelector("#iframeWrap");
+const aiInstructions = document.querySelector("#aiInstructions");
+const aiDraftPreview = document.querySelector("#aiDraftPreview");
+const aiApplyButton = document.querySelector("#aiApplyButton");
 
 async function loadJson(path) {
   const response = await fetch(`${path}?v=${Date.now()}`, { cache: "no-store" });
@@ -86,6 +90,22 @@ function setLocalized(target, key, value) {
 
 function currentProduct() {
   return productData.products[selectedProductIndex];
+}
+
+function currentSiteFields() {
+  return (SITE_FIELDS[selectedPage] || []).map(([key]) => key);
+}
+
+function currentSiteContentForPage() {
+  const fields = currentSiteFields();
+  const content = {};
+  LANGUAGES.forEach((language) => {
+    content[language] = {};
+    fields.forEach((field) => {
+      content[language][field] = siteContent[language]?.[field] || "";
+    });
+  });
+  return content;
 }
 
 function pageUrl() {
@@ -138,6 +158,11 @@ function renderContentFields() {
   SITE_FIELDS[selectedPage].forEach(([key, label, type]) => {
     contentEditor.append(fieldControl(key, label, type));
   });
+}
+
+function updateAiDraftPreview() {
+  aiApplyButton.disabled = !aiDraft;
+  aiDraftPreview.textContent = aiDraft ? JSON.stringify(aiDraft, null, 2) : "No AI draft yet.";
 }
 
 function productButton(product, index) {
@@ -288,6 +313,79 @@ function renderProductEditor() {
   contentEditor.append(removeButton);
 }
 
+function mergeSiteDraft(draftSiteContent) {
+  if (!draftSiteContent) return;
+  LANGUAGES.forEach((language) => {
+    if (!draftSiteContent[language]) return;
+    siteContent[language] = siteContent[language] || {};
+    Object.entries(draftSiteContent[language]).forEach(([key, value]) => {
+      siteContent[language][key] = value;
+    });
+  });
+}
+
+function mergeProductDraft(draftProduct) {
+  const product = currentProduct();
+  if (!product || !draftProduct) return;
+  ["name", "category", "description", "materials"].forEach((field) => {
+    if (!draftProduct[field]) return;
+    product[field] = product[field] || {};
+    if (typeof draftProduct[field] === "object") {
+      LANGUAGES.forEach((language) => {
+        if (draftProduct[field][language]) {
+          product[field][language] = draftProduct[field][language];
+        }
+      });
+    }
+  });
+  ["categoryKey", "dimensions", "image"].forEach((field) => {
+    if (draftProduct[field]) product[field] = draftProduct[field];
+  });
+}
+
+async function requestAiDraft(action) {
+  statusMessage.textContent = "Requesting AI draft...";
+  aiDraft = null;
+  updateAiDraftPreview();
+  const payload = {
+    action,
+    language: selectedLanguage,
+    page: selectedPage,
+    instructions: aiInstructions.value,
+    siteContent: currentSiteContentForPage(),
+    product: selectedPage === "products" ? currentProduct() : null
+  };
+  try {
+    const response = await fetch("/.netlify/functions/ai-edit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || "AI request failed.");
+    }
+    aiDraft = result.draft;
+    updateAiDraftPreview();
+    statusMessage.textContent = "AI draft ready. Review it, then apply it to update the editor preview.";
+  } catch (error) {
+    console.error(error);
+    statusMessage.textContent = error.message;
+    aiDraftPreview.textContent = `Error: ${error.message}`;
+  }
+}
+
+function applyAiDraft() {
+  if (!aiDraft) return;
+  mergeSiteDraft(aiDraft.siteContent);
+  mergeProductDraft(aiDraft.product);
+  aiDraft = null;
+  updateAiDraftPreview();
+  renderContentFields();
+  sendPreviewUpdate();
+  statusMessage.textContent = "AI draft applied to the current editor draft. Use Save when you are ready to publish.";
+}
+
 function downloadFile(filename, data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -417,6 +515,10 @@ async function init() {
   preview.addEventListener("load", sendPreviewUpdate);
   document.querySelector("#saveButton").addEventListener("click", saveChanges);
   document.querySelector("#downloadButton").addEventListener("click", downloadChanges);
+  document.querySelector("#aiImproveButton").addEventListener("click", () => requestAiDraft("improve"));
+  document.querySelector("#aiTranslateButton").addEventListener("click", () => requestAiDraft("translate"));
+  document.querySelector("#aiProductDescriptionButton").addEventListener("click", () => requestAiDraft("product_description"));
+  aiApplyButton.addEventListener("click", applyAiDraft);
   document.querySelector("#desktopPreview").addEventListener("click", () => iframeWrap.className = "iframe-wrap is-desktop");
   document.querySelector("#mobilePreview").addEventListener("click", () => iframeWrap.className = "iframe-wrap is-mobile");
   renderContentFields();
