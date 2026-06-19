@@ -293,15 +293,29 @@ function cssValue(property, value) {
   return value;
 }
 
+function applyHeroBackgroundStyles(element, styles) {
+  if (!element.classList.contains("hero")) return;
+  const image = styles.backgroundImage || "assets/images/placeholder-furniture.svg";
+  const overlayColor = styles.overlayColor || "rgb(18, 31, 27)";
+  const opacity = Number.parseFloat(styles.overlayOpacity || "0.86");
+  const leftOpacity = Number.isFinite(opacity) ? Math.max(0, Math.min(1, opacity)) : 0.86;
+  const rightOpacity = Math.max(0, Math.min(1, leftOpacity * 0.44));
+  element.style.backgroundImage = `linear-gradient(90deg, color-mix(in srgb, ${overlayColor} ${Math.round(leftOpacity * 100)}%, transparent), color-mix(in srgb, ${overlayColor} ${Math.round(rightOpacity * 100)}%, transparent)), url("${image}")`;
+  element.style.backgroundPosition = "center";
+  element.style.backgroundSize = "cover";
+}
+
 function applyElementStyles() {
   document.querySelectorAll("[data-editable-id]").forEach((element) => {
     element.classList.toggle("is-editor-selected", editorPreviewMode && element.dataset.editableId === selectedEditableId);
     const styles = pageBuilder.elementStyles?.[element.dataset.editableId];
     if (!styles) return;
     Object.entries(styles).forEach(([property, value]) => {
-      if (!value || ["altText", "href", "hoverBackgroundColor"].includes(property)) return;
+      if (!value || ["altText", "href", "hoverBackgroundColor", "overlayColor", "overlayOpacity"].includes(property)) return;
+      if (element.classList.contains("hero") && property === "backgroundImage") return;
       element.style[property] = cssValue(property, value);
     });
+    applyHeroBackgroundStyles(element, styles);
     if (styles.altText && element.tagName === "IMG") element.alt = styles.altText;
     if (styles.href) {
       const link = element.tagName === "A" ? element : element.closest("a");
@@ -472,7 +486,10 @@ function renderHomeHeroLayers() {
   if (!hero) return;
   hero.querySelector("[data-design-layer-container='homeHero']")?.remove();
   const layers = pageBuilder.layers?.homeHero || [];
-  if (!layers.length) return;
+  if (!layers.length) {
+    hero.classList.remove("has-design-layers");
+    return;
+  }
   hero.classList.add("has-design-layers");
   const html = renderDesignLayerContainer(layers, "homeHero", "home")
     .replace("aria-hidden=\"false\"", "aria-hidden=\"false\" data-design-layer-container=\"homeHero\"");

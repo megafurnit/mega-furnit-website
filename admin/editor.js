@@ -148,11 +148,6 @@ function ensurePageBuilder() {
   pageBuilder.elementStyles = pageBuilder.elementStyles || {};
   pageBuilder.layers = pageBuilder.layers || {};
   pageBuilder.layers.homeHero = pageBuilder.layers.homeHero || [];
-  defaultHomeHeroLayers().forEach((layer) => {
-    if (!pageBuilder.layers.homeHero.some((existing) => existing.id === layer.id)) {
-      pageBuilder.layers.homeHero.push(layer);
-    }
-  });
   SECTION_PAGES.forEach((page) => {
     pageBuilder.pages[page] = pageBuilder.pages[page] || [];
   });
@@ -713,6 +708,8 @@ function selectedElementControlsForType(type) {
     if (section) section.backgroundImage = value;
     selectedStyle().backgroundImage = value;
   }));
+  add(selectedStyleColor("Overlay color", "overlayColor", "#12201B"));
+  add(selectedStyleInput("Overlay opacity", "overlayOpacity"));
   add(selectedStyleColor("Text color", "color", "#151515"));
   add(selectedStyleInput("Padding", "padding"));
   add(selectedStyleInput("Margin", "margin"));
@@ -800,91 +797,7 @@ function currentSection() {
 }
 
 function defaultHomeHeroLayers() {
-  return [
-    {
-      id: "home-hero-dark-left-overlay",
-      type: "Rectangle",
-      label: "Hero dark green left overlay",
-      x: "0%",
-      y: "0%",
-      width: "62%",
-      height: "100%",
-      zIndex: 0,
-      hidden: false,
-      styles: {
-        backgroundColor: "#12201B",
-        opacity: "0.56",
-        borderRadius: "0"
-      }
-    },
-    {
-      id: "home-hero-dark-right-overlay",
-      type: "Rectangle",
-      label: "Hero dark green right overlay",
-      x: "48%",
-      y: "0%",
-      width: "52%",
-      height: "100%",
-      zIndex: 0,
-      hidden: false,
-      styles: {
-        backgroundColor: "#12201B",
-        opacity: "0.22",
-        borderRadius: "0"
-      }
-    },
-    {
-      id: "home-hero-green-shape",
-      type: "Rectangle",
-      label: "Hero green background shape",
-      x: "58%",
-      y: "12%",
-      width: "34%",
-      height: "46%",
-      zIndex: 1,
-      hidden: false,
-      styles: {
-        backgroundColor: "#25473F",
-        opacity: "0.72",
-        borderRadius: "36px",
-        borderColor: "rgba(255,255,255,0.12)",
-        boxShadow: "0 26px 90px rgba(0,0,0,0.24)"
-      }
-    },
-    {
-      id: "home-hero-bottom-bar",
-      type: "Divider / Spacer",
-      label: "Hero bottom horizontal bar",
-      x: "0%",
-      y: "92%",
-      width: "100%",
-      height: "8%",
-      zIndex: 2,
-      hidden: false,
-      styles: {
-        backgroundColor: "#25473F",
-        opacity: "0.64",
-        borderRadius: "0"
-      }
-    },
-    {
-      id: "home-hero-right-decorative-block",
-      type: "Rectangle",
-      label: "Hero right decorative background part",
-      x: "78%",
-      y: "22%",
-      width: "16%",
-      height: "34%",
-      zIndex: 1,
-      hidden: false,
-      styles: {
-        backgroundColor: "#B08A5A",
-        opacity: "0.22",
-        borderRadius: "999px",
-        boxShadow: "0 18px 60px rgba(0,0,0,0.16)"
-      }
-    }
-  ];
+  return [];
 }
 
 function currentLayerCollectionId() {
