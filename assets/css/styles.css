@@ -788,6 +788,15 @@ body.editor-preview-mode [data-editable-id].is-editor-selected {
   outline-offset: 4px;
 }
 
+body.editor-preview-mode.editor-navigate-mode [data-editable-id] {
+  cursor: auto;
+}
+
+body.editor-preview-mode.editor-navigate-mode [data-editable-id].is-editor-hovered,
+body.editor-preview-mode.editor-navigate-mode [data-editable-id].is-editor-selected {
+  outline: 0;
+}
+
 body.editor-preview-mode a[data-editable-id]:hover {
   background: var(--editor-hover-bg, inherit);
 }

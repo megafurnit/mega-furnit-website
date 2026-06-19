@@ -8,6 +8,7 @@ let pageBuilder = {};
 let products = [];
 let currentLanguage = localStorage.getItem("megaFurnitLang") || DEFAULT_LANGUAGE;
 let editorPreviewMode = false;
+let previewInteractionMode = "edit";
 let selectedEditableId = "";
 let inspectorEventsBound = false;
 
@@ -344,18 +345,19 @@ function sendSelectedElement(element) {
 
 function setupEditableInspector() {
   document.body.classList.toggle("editor-preview-mode", editorPreviewMode);
+  document.body.classList.toggle("editor-navigate-mode", editorPreviewMode && previewInteractionMode === "navigate");
   applyElementStyles();
   if (inspectorEventsBound) return;
   inspectorEventsBound = true;
   document.addEventListener("mouseover", (event) => {
-    if (!editorPreviewMode) return;
+    if (!editorPreviewMode || previewInteractionMode === "navigate") return;
     editableTarget(event)?.classList.add("is-editor-hovered");
   });
   document.addEventListener("mouseout", (event) => {
     editableTarget(event)?.classList.remove("is-editor-hovered");
   });
   document.addEventListener("click", (event) => {
-    if (!editorPreviewMode) return;
+    if (!editorPreviewMode || previewInteractionMode === "navigate") return;
     const interactive = event.target.closest("a, button");
     const target = editableTarget(event)
       || (interactive?.matches("[data-editable-id]") ? interactive : null)
@@ -691,6 +693,7 @@ function whatsappHref(product) {
 }
 
 function productCard(product) {
+  const factoryTypeLabel = localized(product.factoryTypeLabel) || t(product.factoryType);
   return `
     <article class="product-card" ${productEditable(product, "product-card", "root")}>
       <a href="product-detail.html?id=${encodeURIComponent(product.id)}" aria-label="${localized(product.name)}">
@@ -698,18 +701,18 @@ function productCard(product) {
       </a>
       <div class="product-body">
         <div>
-          <div class="product-kicker" ${productEditable(product, "text", "category")}>${product.id} · ${localized(product.category)}</div>
+          <div class="product-kicker"><span ${productEditable(product, "text", "id")}>${product.id}</span> · <span ${productEditable(product, "text", "category")}>${localized(product.category)}</span></div>
           <h3><a href="product-detail.html?id=${encodeURIComponent(product.id)}" ${productEditable(product, "heading", "name")}>${localized(product.name)}</a></h3>
         </div>
         <p ${productEditable(product, "text", "description")}>${localized(product.description)}</p>
         <div class="product-meta">
-          <span class="pill" ${productEditable(product, "text", "factoryType")}>${t(product.factoryType)}</span>
+          <span class="pill" ${productEditable(product, "text", "factoryTypeLabel")}>${factoryTypeLabel}</span>
           <span class="pill" ${productEditable(product, "text", "style")}>${localized(product.style)}</span>
           <span class="pill" ${productEditable(product, "text", "moq")}>${product.moq}</span>
         </div>
         <div class="cta-row">
           <a class="btn btn-primary" href="${inquiryHref(product)}" ${i18nEditable("button", "requestQuote")}>${t("requestQuote")}</a>
-          <a class="btn btn-secondary" href="product-detail.html?id=${encodeURIComponent(product.id)}" ${i18nEditable("button", "details")}>${t("details")}</a>
+          <a class="btn btn-secondary" href="product-detail.html?id=${encodeURIComponent(product.id)}" ${productEditable(product, "button", "detailsButton")}>${localized(product.detailsButton) || t("details")}</a>
         </div>
       </div>
     </article>
@@ -784,16 +787,25 @@ function renderProductDetail() {
     return;
   }
 
+  const optionalSpecRows = [
+    ["leadTime", "Lead time / loading", "leadTime"],
+    ["packaging", "Packaging", "packaging"]
+  ]
+    .filter(([field]) => product[field])
+    .map(([labelKey, fallbackLabel, field]) => `<div class="spec-row"><dt ${i18nEditable("heading", labelKey)}>${t(labelKey) === labelKey ? fallbackLabel : t(labelKey)}</dt><dd ${productEditable(product, "text", field)}>${localized(product[field]) || product[field]}</dd></div>`)
+    .join("");
+  const factoryTypeLabel = localized(product.factoryTypeLabel) || t(product.factoryType);
+
   detail.innerHTML = `
     <div>
       <img class="detail-image" src="${product.image}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
     </div>
     <aside class="detail-panel">
-      <div class="product-id" ${productEditable(product, "text", "category")}>${product.id} · ${localized(product.category)}</div>
+      <div class="product-id"><span ${productEditable(product, "text", "id")}>${product.id}</span> · <span ${productEditable(product, "text", "category")}>${localized(product.category)}</span></div>
       <h1 ${productEditable(product, "heading", "name")}>${localized(product.name)}</h1>
       <p class="lead" ${productEditable(product, "text", "description")}>${localized(product.description)}</p>
       <dl class="spec-list">
-        <div class="spec-row"><dt ${i18nEditable("heading", "factoryType")}>${t("factoryType")}</dt><dd ${productEditable(product, "text", "factoryType")}>${t(product.factoryType)}</dd></div>
+        <div class="spec-row"><dt ${i18nEditable("heading", "factoryType")}>${t("factoryType")}</dt><dd ${productEditable(product, "text", "factoryTypeLabel")}>${factoryTypeLabel}</dd></div>
         <div class="spec-row"><dt ${i18nEditable("heading", "style")}>${t("style")}</dt><dd ${productEditable(product, "text", "style")}>${localized(product.style)}</dd></div>
         <div class="spec-row"><dt ${i18nEditable("heading", "dimensions")}>${t("dimensions")}</dt><dd ${productEditable(product, "text", "dimensions")}>${product.dimensions}</dd></div>
         <div class="spec-row"><dt ${i18nEditable("heading", "materials")}>${t("materials")}</dt><dd ${productEditable(product, "text", "materials")}>${localized(product.materials)}</dd></div>
@@ -801,8 +813,10 @@ function renderProductDetail() {
         <div class="spec-row"><dt ${i18nEditable("heading", "fob")}>${t("fob")}</dt><dd ${i18nEditable("text", product.fob ? "available" : "productNotFound")}>${product.fob ? t("available") : "N/A"}</dd></div>
         <div class="spec-row"><dt ${i18nEditable("heading", "loading")}>${t("loading")}</dt><dd ${productEditable(product, "text", "loading40hq")}>${product.loading40hq}</dd></div>
         <div class="spec-row"><dt ${i18nEditable("heading", "customOptions")}>${t("customOptions")}</dt><dd ${productEditable(product, "text", "customOptions")}>${localized(product.customOptions)}</dd></div>
+        ${optionalSpecRows}
       </dl>
       <div class="cta-row">
+        <a class="btn btn-secondary" href="products.html" ${i18nEditable("button", "backToCatalog")}>${t("backToCatalog")}</a>
         <a class="btn btn-primary" href="${inquiryHref(product)}" ${i18nEditable("button", "requestQuote")}>${t("requestQuote")}</a>
         <a class="btn btn-secondary" target="_blank" rel="noopener" href="${whatsappHref(product)}" ${i18nEditable("button", "whatsapp")}>${t("whatsapp")}</a>
       </div>
@@ -837,6 +851,7 @@ function renderCurrentPage() {
 function applyPreviewState(previewState) {
   if (!previewState || previewState.type !== "mega-furnit-preview") return;
   editorPreviewMode = Boolean(previewState.editorPreview);
+  previewInteractionMode = previewState.interactionMode === "navigate" ? "navigate" : "edit";
   selectedEditableId = previewState.selectedEditableId || "";
   if (previewState.language) {
     currentLanguage = normalizeLanguage(previewState.language);

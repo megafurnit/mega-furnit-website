@@ -334,6 +334,12 @@ textarea {
   border-color: var(--line);
 }
 
+.preview-actions button.is-active {
+  background: var(--forest);
+  color: #fff;
+  border-color: var(--forest);
+}
+
 .danger-button {
   background: #fff;
   color: var(--danger);
