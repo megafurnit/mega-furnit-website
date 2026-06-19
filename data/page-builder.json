@@ -10,7 +10,7 @@
     "cardBackground": "#1E1E1E",
     "borderColor": "#1E1E1E",
     "linkColor": "#1E1E1E",
-    "headingFont": "Georgia",
+    "headingFont": "Times New Roman",
     "bodyFont": "Inter",
     "baseFontSize": "16px",
     "buttonRadius": "8px",
@@ -25,5 +25,22 @@
     "about": [],
     "contact": [],
     "catalog": []
+  },
+  "elementStyles": {
+    "product-MF-SF001-quoteButton": {},
+    "product-MF-SF001-root": {},
+    "site-supplyText": {
+      "textAlign": "left",
+      "color": "#f1e9e9",
+      "fontWeight": "",
+      "fontStyle": "",
+      "textDecoration": "underline",
+      "fontFamily": "Georgia"
+    },
+    "product-MF-SF004-description": {
+      "textDecoration": "",
+      "fontStyle": "",
+      "fontWeight": ""
+    }
   }
 }
