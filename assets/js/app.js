@@ -23,11 +23,17 @@ function localized(value) {
 }
 
 function t(key) {
-  return translations[currentLanguage]?.[key] || translations[DEFAULT_LANGUAGE]?.[key] || key;
+  return cmsContent[currentLanguage]?.[key]
+    || cmsContent[DEFAULT_LANGUAGE]?.[key]
+    || baseTranslation(key);
 }
 
 function cmsText(key) {
   return cmsContent[currentLanguage]?.[key] || cmsContent[DEFAULT_LANGUAGE]?.[key] || "";
+}
+
+function baseTranslation(key) {
+  return translations[currentLanguage]?.[key] || translations[DEFAULT_LANGUAGE]?.[key] || key;
 }
 
 function escapeAttr(value) {
@@ -56,6 +62,34 @@ function productEditable(product, type, field) {
     "data-editable-source": "products",
     "data-editable-product-id": product.id,
     "data-editable-field": field
+  });
+}
+
+function i18nEditable(type, key) {
+  return editableAttrs(type, `i18n-${key}`, `siteContent.${currentLanguage}.${key}`, {
+    "data-editable-source": "siteContent",
+    "data-editable-field": key
+  });
+}
+
+function editableTypeForElement(element) {
+  if (element.matches("img")) return "image";
+  if (element.matches("a, button")) return "button";
+  if (element.matches("h1, h2, h3, h4, h5, h6, summary, dt, label")) return "heading";
+  return "text";
+}
+
+function assignEditable(element, type, id, path, extra = {}) {
+  if (!element) return;
+  const forceEditable = Boolean(extra.forceEditable);
+  if (element.dataset.editableId && !forceEditable) return;
+  element.dataset.editableId = id;
+  element.dataset.editableType = type;
+  element.dataset.editablePath = path || "";
+  Object.entries(extra).forEach(([key, value]) => {
+    if (key !== "forceEditable" && value !== undefined && value !== null && value !== "") {
+      element.dataset[key] = value;
+    }
   });
 }
 
@@ -97,7 +131,13 @@ function setDocumentLanguage() {
 
 function applyTranslations() {
   document.querySelectorAll("[data-i18n]").forEach((element) => {
-    element.textContent = t(element.dataset.i18n);
+    const key = element.dataset.i18n;
+    element.textContent = t(key);
+    assignEditable(element, editableTypeForElement(element), `i18n-${key}`, `siteContent.${currentLanguage}.${key}`, {
+      editableSource: "siteContent",
+      editableField: key,
+      forceEditable: true
+    });
   });
 
   document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
@@ -106,10 +146,20 @@ function applyTranslations() {
 
   document.querySelectorAll("[data-action='quote']").forEach((element) => {
     element.textContent = t("requestQuote");
+    assignEditable(element, "button", "i18n-requestQuote", `siteContent.${currentLanguage}.requestQuote`, {
+      editableSource: "siteContent",
+      editableField: "requestQuote",
+      forceEditable: true
+    });
   });
 
   document.querySelectorAll("[data-action='catalog']").forEach((element) => {
     element.textContent = t("downloadCatalog");
+    assignEditable(element, "button", "i18n-downloadCatalog", `siteContent.${currentLanguage}.downloadCatalog`, {
+      editableSource: "siteContent",
+      editableField: "downloadCatalog",
+      forceEditable: true
+    });
   });
 
   setDocumentLanguage();
@@ -119,12 +169,54 @@ function applyCmsContent() {
   document.querySelectorAll("[data-cms]").forEach((element) => {
     const key = element.dataset.cms;
     element.textContent = cmsText(key);
-    const type = element.matches("a, button") ? "button" : (element.matches("h1, h2, h3, h4, h5, h6") ? "heading" : "text");
+    const type = editableTypeForElement(element);
     element.dataset.editableId = `site-${key}`;
     element.dataset.editableType = type;
     element.dataset.editablePath = `siteContent.${currentLanguage}.${key}`;
     element.dataset.editableSource = "siteContent";
     element.dataset.editableField = key;
+  });
+}
+
+function applyStaticCmsContent() {
+  document.querySelectorAll("[data-static-cms]").forEach((element) => {
+    const key = element.dataset.staticCms;
+    const value = cmsText(key);
+    if (value) element.textContent = value;
+    assignEditable(element, element.dataset.staticType || editableTypeForElement(element), `site-${key}`, `siteContent.${currentLanguage}.${key}`, {
+      editableSource: "siteContent",
+      editableField: key
+    });
+  });
+}
+
+function markStructuralEditables() {
+  const page = currentPageKey();
+  [
+    [".hero", "banner"],
+    [".page-hero", "banner"],
+    [".metric-band", "section"],
+    [".section", "section"],
+    [".site-footer", "background"],
+    [".filters", "background"],
+    [".contact-form", "background"],
+    ["form[name='inquiry']", "background"]
+  ].forEach(([selector, type]) => {
+    document.querySelectorAll(selector).forEach((element, index) => {
+      assignEditable(element, type, `${page}-${type}-${index}`, "", { editablePage: page });
+    });
+  });
+
+  [
+    [".metric", "card"],
+    [".capability-item", "card"],
+    [".info-panel", "card"],
+    [".contact-card", "card"],
+    [".workflow li", "card"]
+  ].forEach(([selector, type]) => {
+    document.querySelectorAll(selector).forEach((element, index) => {
+      assignEditable(element, type, `${page}-${selector.replace(/[^a-z0-9]+/gi, "-")}-${index}`, "", { editablePage: page });
+    });
   });
 }
 
@@ -440,6 +532,7 @@ function setupLanguageSwitcher() {
       localStorage.setItem("megaFurnitLang", currentLanguage);
       applyTranslations();
       applyCmsContent();
+      applyStaticCmsContent();
       setupLanguageSwitcher();
       renderCurrentPage();
     });
@@ -478,13 +571,13 @@ function productCard(product) {
         </div>
         <p ${productEditable(product, "text", "description")}>${localized(product.description)}</p>
         <div class="product-meta">
-          <span class="pill">${t(product.factoryType)}</span>
-          <span class="pill">${localized(product.style)}</span>
-          <span class="pill">${product.moq}</span>
+          <span class="pill" ${productEditable(product, "text", "factoryType")}>${t(product.factoryType)}</span>
+          <span class="pill" ${productEditable(product, "text", "style")}>${localized(product.style)}</span>
+          <span class="pill" ${productEditable(product, "text", "moq")}>${product.moq}</span>
         </div>
         <div class="cta-row">
-          <a class="btn btn-primary" href="${inquiryHref(product)}" ${productEditable(product, "button", "quoteButton")}>${t("requestQuote")}</a>
-          <a class="btn btn-secondary" href="product-detail.html?id=${encodeURIComponent(product.id)}">${t("details")}</a>
+          <a class="btn btn-primary" href="${inquiryHref(product)}" ${i18nEditable("button", "requestQuote")}>${t("requestQuote")}</a>
+          <a class="btn btn-secondary" href="product-detail.html?id=${encodeURIComponent(product.id)}" ${i18nEditable("button", "details")}>${t("details")}</a>
         </div>
       </div>
     </article>
@@ -568,18 +661,18 @@ function renderProductDetail() {
       <h1 ${productEditable(product, "heading", "name")}>${localized(product.name)}</h1>
       <p class="lead" ${productEditable(product, "text", "description")}>${localized(product.description)}</p>
       <dl class="spec-list">
-        <div class="spec-row"><dt>${t("factoryType")}</dt><dd>${t(product.factoryType)}</dd></div>
-        <div class="spec-row"><dt>${t("style")}</dt><dd>${localized(product.style)}</dd></div>
-        <div class="spec-row"><dt>${t("dimensions")}</dt><dd ${productEditable(product, "text", "dimensions")}>${product.dimensions}</dd></div>
-        <div class="spec-row"><dt>${t("materials")}</dt><dd ${productEditable(product, "text", "materials")}>${localized(product.materials)}</dd></div>
-        <div class="spec-row"><dt>${t("moq")}</dt><dd>${product.moq}</dd></div>
-        <div class="spec-row"><dt>${t("fob")}</dt><dd>${product.fob ? t("available") : "N/A"}</dd></div>
-        <div class="spec-row"><dt>${t("loading")}</dt><dd>${product.loading40hq}</dd></div>
-        <div class="spec-row"><dt>${t("customOptions")}</dt><dd>${localized(product.customOptions)}</dd></div>
+        <div class="spec-row"><dt ${i18nEditable("heading", "factoryType")}>${t("factoryType")}</dt><dd ${productEditable(product, "text", "factoryType")}>${t(product.factoryType)}</dd></div>
+        <div class="spec-row"><dt ${i18nEditable("heading", "style")}>${t("style")}</dt><dd ${productEditable(product, "text", "style")}>${localized(product.style)}</dd></div>
+        <div class="spec-row"><dt ${i18nEditable("heading", "dimensions")}>${t("dimensions")}</dt><dd ${productEditable(product, "text", "dimensions")}>${product.dimensions}</dd></div>
+        <div class="spec-row"><dt ${i18nEditable("heading", "materials")}>${t("materials")}</dt><dd ${productEditable(product, "text", "materials")}>${localized(product.materials)}</dd></div>
+        <div class="spec-row"><dt ${i18nEditable("heading", "moq")}>${t("moq")}</dt><dd ${productEditable(product, "text", "moq")}>${product.moq}</dd></div>
+        <div class="spec-row"><dt ${i18nEditable("heading", "fob")}>${t("fob")}</dt><dd ${i18nEditable("text", product.fob ? "available" : "productNotFound")}>${product.fob ? t("available") : "N/A"}</dd></div>
+        <div class="spec-row"><dt ${i18nEditable("heading", "loading")}>${t("loading")}</dt><dd ${productEditable(product, "text", "loading40hq")}>${product.loading40hq}</dd></div>
+        <div class="spec-row"><dt ${i18nEditable("heading", "customOptions")}>${t("customOptions")}</dt><dd ${productEditable(product, "text", "customOptions")}>${localized(product.customOptions)}</dd></div>
       </dl>
       <div class="cta-row">
-        <a class="btn btn-primary" href="${inquiryHref(product)}" ${productEditable(product, "button", "quoteButton")}>${t("requestQuote")}</a>
-        <a class="btn btn-secondary" target="_blank" rel="noopener" href="${whatsappHref(product)}">${t("whatsapp")}</a>
+        <a class="btn btn-primary" href="${inquiryHref(product)}" ${i18nEditable("button", "requestQuote")}>${t("requestQuote")}</a>
+        <a class="btn btn-secondary" target="_blank" rel="noopener" href="${whatsappHref(product)}" ${i18nEditable("button", "whatsapp")}>${t("whatsapp")}</a>
       </div>
     </aside>
   `;
@@ -602,6 +695,8 @@ function renderCurrentPage() {
   renderProductDetail();
   renderPageSections();
   setupContactSubject();
+  applyStaticCmsContent();
+  markStructuralEditables();
   setupEditableInspector();
 }
 
@@ -623,6 +718,7 @@ function applyPreviewState(previewState) {
   }
   applyTranslations();
   applyCmsContent();
+  applyStaticCmsContent();
   applyThemeSettings();
   setupLanguageSwitcher();
   renderCurrentPage();
@@ -656,6 +752,7 @@ async function init() {
     products = normalizeProducts(productData);
     applyTranslations();
     applyCmsContent();
+    applyStaticCmsContent();
     setupLanguageSwitcher();
     setupMobileNavigation();
     renderCurrentPage();

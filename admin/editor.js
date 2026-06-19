@@ -318,6 +318,7 @@ function resolveEditablePath(path) {
   if (!path) return null;
   const parts = path.split(".");
   if (parts[0] === "siteContent") {
+    siteContent[parts[1]] = siteContent[parts[1]] || {};
     return { parent: siteContent[parts[1]], key: parts[2] };
   }
   if (parts[0] === "products") {
@@ -367,7 +368,7 @@ function selectedElementValue() {
   if (pathValue) return pathValue;
   const field = selectedElement.field;
   if (selectedElement.source === "siteContent") {
-    return siteContent[selectedLanguage]?.[field] || "";
+    return siteContent[selectedLanguage]?.[field] || siteContent.en?.[field] || selectedElement.label || "";
   }
   if (selectedElement.source === "products") {
     const product = productById(selectedElement.productId);
@@ -375,7 +376,7 @@ function selectedElementValue() {
     if (["name", "description", "materials", "category", "style", "customOptions"].includes(field)) {
       return localized(product[field]);
     }
-    return product[field] || "";
+    return product[field] || selectedElement.label || "";
   }
   if (selectedElement.source === "pageBuilder") {
     const section = selectedSection();
@@ -385,7 +386,7 @@ function selectedElementValue() {
     }
     return section[field] || "";
   }
-  return "";
+  return selectedElement.label || "";
 }
 
 function updateSelectedElementValue(value, overrideField) {
@@ -393,6 +394,7 @@ function updateSelectedElementValue(value, overrideField) {
   if (!overrideField && setValueAtEditablePath(selectedElement.path, value)) return;
   const field = overrideField || selectedElement.field;
   if (selectedElement.source === "siteContent") {
+    siteContent[selectedLanguage] = siteContent[selectedLanguage] || {};
     siteContent[selectedLanguage][field] = value;
   } else if (selectedElement.source === "products") {
     const product = productById(selectedElement.productId);
