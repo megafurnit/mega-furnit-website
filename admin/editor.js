@@ -91,6 +91,7 @@ const FONTS = ["Inter", "Arial", "Georgia", "Times New Roman", "Helvetica", "Ver
 const SWATCHES = ["#F3EBDD", "#EFE6D8", "#151515", "#1E1E1E", "#6B4423", "#7A5230", "#B08A5A", "#8C867D", "#FFFFFF"];
 const SECTION_TYPES = ["Hero Banner", "Text Block", "Image Banner", "Image Gallery", "Video Block", "CTA Banner", "Feature Cards", "Product Grid", "FAQ Section", "Logo Strip", "Custom HTML/Text Block"];
 const SECTION_PAGES = ["home", "products", "product-detail", "capabilities", "about", "contact", "catalog"];
+const LAYER_TYPES = ["Text Box", "Button", "Rectangle", "Image", "Video", "Divider / Spacer"];
 
 let siteContent = {};
 let productData = { products: [] };
@@ -142,6 +143,8 @@ function ensurePageBuilder() {
   pageBuilder.theme = { ...THEME_DEFAULTS, ...(pageBuilder.theme || {}) };
   pageBuilder.pages = pageBuilder.pages || {};
   pageBuilder.elementStyles = pageBuilder.elementStyles || {};
+  pageBuilder.layers = pageBuilder.layers || {};
+  pageBuilder.layers.homeHero = pageBuilder.layers.homeHero || defaultHomeHeroLayers();
   SECTION_PAGES.forEach((page) => {
     pageBuilder.pages[page] = pageBuilder.pages[page] || [];
   });
@@ -304,6 +307,11 @@ function ensureElementStyles() {
 }
 
 function selectedStyle() {
+  const layer = currentSelectedLayer();
+  if (layer) {
+    layer.styles = layer.styles || {};
+    return layer.styles;
+  }
   if (!selectedElement?.id) return {};
   const styles = ensureElementStyles();
   styles[selectedElement.id] = styles[selectedElement.id] || {};
@@ -378,6 +386,14 @@ function selectedElementValue() {
     }
     return product[field] || selectedElement.label || "";
   }
+  if (selectedElement.source === "pageBuilderLayer") {
+    const layer = currentSelectedLayer();
+    if (!layer) return selectedElement.label || "";
+    if (["Text Box", "Button"].includes(layer.type)) return localized(layer.text);
+    if (layer.type === "Image") return layer.image || "";
+    if (layer.type === "Video") return layer.videoPath || "";
+    return layer.label || selectedElement.label || "";
+  }
   if (selectedElement.source === "pageBuilder") {
     const section = selectedSection();
     if (!section) return "";
@@ -403,6 +419,18 @@ function updateSelectedElementValue(value, overrideField) {
       setLocalized(product, field, value);
     } else {
       product[field] = value;
+    }
+  } else if (selectedElement.source === "pageBuilderLayer") {
+    const layer = currentSelectedLayer();
+    if (!layer) return;
+    if (["Text Box", "Button"].includes(layer.type)) {
+      setLocalized(layer, "text", value);
+    } else if (layer.type === "Image") {
+      layer.image = value;
+    } else if (layer.type === "Video") {
+      layer.videoPath = value;
+    } else {
+      layer.label = value;
     }
   } else if (selectedElement.source === "pageBuilder") {
     const section = selectedSection();
@@ -470,6 +498,63 @@ function moveSelectedSection(direction) {
   sendPreviewUpdate();
 }
 
+function layerInput(label, key, type = "text") {
+  const layer = currentSelectedLayer();
+  return simpleInput(label, layer?.[key] || "", (value) => {
+    if (layer) layer[key] = value;
+  }, type);
+}
+
+function layerLocalizedInput(label, key, type = "textarea") {
+  const layer = currentSelectedLayer();
+  return simpleInput(label, localized(layer?.[key]), (value) => {
+    if (layer) setLocalized(layer, key, value);
+  }, type);
+}
+
+function updateLayerOrder(layer, direction) {
+  const layers = pageBuilder.layers?.[selectedElement?.layerCollection] || [];
+  const index = layers.findIndex((item) => item.id === layer.id);
+  const nextIndex = index + direction;
+  if (index < 0 || nextIndex < 0 || nextIndex >= layers.length) return;
+  [layers[index], layers[nextIndex]] = [layers[nextIndex], layers[index]];
+  layers.forEach((item, orderIndex) => {
+    item.zIndex = orderIndex + 1;
+  });
+  sendPreviewUpdate();
+}
+
+function duplicateSelectedLayer() {
+  const layer = currentSelectedLayer();
+  if (!layer) return;
+  const layers = pageBuilder.layers?.[selectedElement.layerCollection] || [];
+  const clone = JSON.parse(JSON.stringify(layer));
+  clone.id = `layer-${Date.now()}`;
+  clone.label = `${clone.label || clone.type} copy`;
+  layers.push(clone);
+  selectedElement = {
+    ...selectedElement,
+    id: `layer-${clone.id}`,
+    layerId: clone.id,
+    label: clone.label
+  };
+  renderSectionsEditor();
+  renderSelectedElementEditor();
+  sendPreviewUpdate();
+}
+
+function deleteSelectedLayer() {
+  const layer = currentSelectedLayer();
+  if (!layer) return;
+  const layers = pageBuilder.layers?.[selectedElement.layerCollection] || [];
+  const index = layers.findIndex((item) => item.id === layer.id);
+  if (index >= 0) layers.splice(index, 1);
+  selectedElement = null;
+  renderSectionsEditor();
+  renderSelectedElementEditor();
+  sendPreviewUpdate();
+}
+
 function clearSelectedElement() {
   selectedElement = null;
   renderSelectedElementEditor();
@@ -481,6 +566,77 @@ function selectedElementControlsForType(type) {
   const controls = document.createElement("div");
   const add = (node) => controls.append(node);
   const normalized = type === "paragraph" ? "text" : type;
+
+  if (normalized === "design-layer") {
+    const layer = currentSelectedLayer();
+    if (!layer) return controls;
+    add(layerInput("Layer label", "label"));
+    add(selectInput("Layer type", layer.type, LAYER_TYPES, (value) => { layer.type = value; }));
+    add(layerInput("X position", "x"));
+    add(layerInput("Y position", "y"));
+    add(layerInput("Width", "width"));
+    add(layerInput("Height", "height"));
+    add(layerInput("Z-index / layer order", "zIndex", "number"));
+    add(checkboxControl("Hide layer", layer.hidden, (checked) => { layer.hidden = checked; }));
+
+    if (["Text Box", "Button"].includes(layer.type)) {
+      add(layerLocalizedInput(layer.type === "Button" ? "Button text" : "Text content", "text"));
+      add(selectedStyleSelect("Font family", "fontFamily", FONTS));
+      add(selectedStyleInput("Font size", "fontSize"));
+      add(checkboxControl("Bold", selectedStyle().fontWeight === "700" || selectedStyle().fontWeight === "800", (checked) => {
+        selectedStyle().fontWeight = checked ? "700" : "";
+      }));
+      add(checkboxControl("Italic", selectedStyle().fontStyle === "italic", (checked) => {
+        selectedStyle().fontStyle = checked ? "italic" : "";
+      }));
+      add(checkboxControl("Underline", selectedStyle().textDecoration === "underline", (checked) => {
+        selectedStyle().textDecoration = checked ? "underline" : "";
+      }));
+      add(selectedStyleColor("Text color", "color", layer.type === "Button" ? "#FFFFFF" : "#151515"));
+      add(selectedStyleSelect("Alignment", "textAlign", ["", "left", "center", "right"]));
+      add(selectedStyleInput("Line height", "lineHeight"));
+      add(selectedStyleInput("Letter spacing", "letterSpacing"));
+      add(selectedStyleColor("Background color", "backgroundColor", layer.type === "Button" ? "#151515" : "#FFFFFF"));
+      add(selectedStyleInput("Padding", "padding"));
+      add(selectedStyleInput("Border radius", "borderRadius"));
+      add(layerInput("Link URL", "link"));
+      if (layer.type === "Button") add(selectedStyleColor("Hover background color", "hoverBackgroundColor", "#1E1E1E"));
+    } else if (layer.type === "Image") {
+      add(layerInput("Image path", "image"));
+      add(layerLocalizedInput("Alt text", "alt", "input"));
+      add(selectedStyleSelect("Object fit", "objectFit", ["", "cover", "contain", "fill"]));
+      add(selectedStyleInput("Link URL", "href"));
+    } else if (layer.type === "Video") {
+      add(layerInput("Video path", "videoPath"));
+      add(layerInput("Poster image path", "posterImage"));
+      add(checkboxControl("Autoplay", layer.autoplay, (checked) => { layer.autoplay = checked; }));
+      add(checkboxControl("Controls", layer.controls !== false, (checked) => { layer.controls = checked; }));
+    }
+
+    add(selectedStyleColor("Background color", "backgroundColor", "#B08A5A"));
+    add(selectedStyleInput("Opacity", "opacity"));
+    add(selectedStyleInput("Border radius", "borderRadius"));
+    add(selectedStyleColor("Border color", "borderColor", "#8C867D"));
+    add(selectedStyleInput("Shadow", "boxShadow"));
+
+    const row = document.createElement("div");
+    row.className = "button-row";
+    [
+      ["Bring forward", () => updateLayerOrder(layer, 1)],
+      ["Send backward", () => updateLayerOrder(layer, -1)],
+      ["Duplicate layer", duplicateSelectedLayer],
+      ["Delete layer", deleteSelectedLayer]
+    ].forEach(([label, handler]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = label === "Delete layer" ? "danger-button" : "secondary-button";
+      button.textContent = label;
+      button.addEventListener("click", handler);
+      row.append(button);
+    });
+    add(row);
+    return controls;
+  }
 
   if (["heading", "text"].includes(normalized)) {
     add(selectedTextControl("Text content"));
@@ -624,6 +780,79 @@ function currentSection() {
   return currentSections()[selectedSectionIndex];
 }
 
+function defaultHomeHeroLayers() {
+  return [
+    {
+      id: "home-hero-green-shape",
+      type: "Rectangle",
+      label: "Hero green background shape",
+      x: "58%",
+      y: "12%",
+      width: "34%",
+      height: "46%",
+      zIndex: 1,
+      hidden: false,
+      styles: {
+        backgroundColor: "#25473F",
+        opacity: "0.72",
+        borderRadius: "36px",
+        borderColor: "rgba(255,255,255,0.12)",
+        boxShadow: "0 26px 90px rgba(0,0,0,0.24)"
+      }
+    }
+  ];
+}
+
+function currentLayerCollectionId() {
+  if (selectedPage === "home") return "homeHero";
+  const section = currentSection();
+  return section ? `${selectedPage}:${section.id}` : selectedPage;
+}
+
+function currentLayers() {
+  pageBuilder.layers = pageBuilder.layers || {};
+  const collectionId = currentLayerCollectionId();
+  pageBuilder.layers[collectionId] = pageBuilder.layers[collectionId] || [];
+  return pageBuilder.layers[collectionId];
+}
+
+function layerById(layerId, collectionId = selectedElement?.layerCollection || currentLayerCollectionId()) {
+  return (pageBuilder.layers?.[collectionId] || []).find((layer) => layer.id === layerId);
+}
+
+function currentSelectedLayer() {
+  if (selectedElement?.source !== "pageBuilderLayer") return null;
+  return layerById(selectedElement.layerId, selectedElement.layerCollection);
+}
+
+function defaultLayer(type = "Text Box") {
+  const id = `layer-${Date.now()}`;
+  const base = {
+    id,
+    type,
+    label: type,
+    x: "12%",
+    y: "16%",
+    width: type === "Divider / Spacer" ? "52%" : "260px",
+    height: type === "Divider / Spacer" ? "2px" : "auto",
+    zIndex: 5,
+    hidden: false,
+    styles: {
+      backgroundColor: type === "Rectangle" || type === "Divider / Spacer" ? "#B08A5A" : "",
+      color: "#151515",
+      opacity: "1",
+      borderRadius: type === "Button" ? "8px" : "0",
+      borderColor: "",
+      boxShadow: ""
+    }
+  };
+  if (type === "Text Box") return { ...base, text: { en: "New text layer", es: "Nueva capa de texto", zh: "新文本层" }, styles: { ...base.styles, backgroundColor: "transparent", padding: "0", fontSize: "22px" } };
+  if (type === "Button") return { ...base, text: { en: "Request Quote", es: "Solicitar cotización", zh: "询价" }, link: "contact.html", styles: { ...base.styles, backgroundColor: "#151515", color: "#FFFFFF", padding: "12px 18px" } };
+  if (type === "Image") return { ...base, image: "assets/images/placeholder-furniture.svg", alt: { en: "Furniture image", es: "Imagen de mueble", zh: "家具图片" }, styles: { ...base.styles, objectFit: "cover", borderRadius: "8px" } };
+  if (type === "Video") return { ...base, videoPath: "", posterImage: "assets/images/placeholder-furniture.svg", controls: true, autoplay: false, styles: { ...base.styles, borderRadius: "8px" } };
+  return base;
+}
+
 function defaultSection(type = "Text Block") {
   const base = {
     id: `section-${Date.now()}`,
@@ -735,6 +964,107 @@ function renderSectionFields(section) {
   return fields;
 }
 
+function selectLayer(layer, collectionId = currentLayerCollectionId()) {
+  selectedElement = {
+    id: `layer-${layer.id}`,
+    type: "design-layer",
+    source: "pageBuilderLayer",
+    layerId: layer.id,
+    layerCollection: collectionId,
+    page: selectedPage,
+    label: layer.label || layer.type
+  };
+  renderSelectedElementEditor();
+  sendPreviewUpdate();
+}
+
+function renderLayerManager() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "nested-editor layer-manager";
+  const collectionId = currentLayerCollectionId();
+  const layers = currentLayers();
+  wrapper.append(Object.assign(document.createElement("h3"), { textContent: selectedPage === "home" ? "Homepage Hero Layers" : "Section Layers" }));
+
+  const addRow = document.createElement("div");
+  addRow.className = "button-row";
+  const typeSelect = document.createElement("select");
+  LAYER_TYPES.forEach((type) => {
+    const option = document.createElement("option");
+    option.value = type;
+    option.textContent = type;
+    typeSelect.append(option);
+  });
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "secondary-button";
+  add.textContent = "Add layer";
+  add.addEventListener("click", () => {
+    const layer = defaultLayer(typeSelect.value);
+    layers.push(layer);
+    selectLayer(layer, collectionId);
+    renderSectionsEditor();
+    sendPreviewUpdate();
+  });
+  addRow.append(typeSelect, add);
+  wrapper.append(addRow);
+
+  if (!layers.length) {
+    const note = document.createElement("p");
+    note.className = "help-text";
+    note.textContent = "No design layers yet. Add a layer above.";
+    wrapper.append(note);
+    return wrapper;
+  }
+
+  const list = document.createElement("div");
+  list.className = "layer-list";
+  layers
+    .slice()
+    .sort((a, b) => Number(a.zIndex || 0) - Number(b.zIndex || 0))
+    .forEach((layer) => {
+      const row = document.createElement("div");
+      row.className = `layer-row${selectedElement?.layerId === layer.id ? " is-active" : ""}`;
+      const select = document.createElement("button");
+      select.type = "button";
+      select.className = "layer-select";
+      select.innerHTML = `<strong>${layer.label || layer.type}</strong><span>${layer.type}${layer.hidden ? " · Hidden" : ""}</span>`;
+      select.addEventListener("click", () => selectLayer(layer, collectionId));
+
+      const actions = document.createElement("div");
+      actions.className = "mini-actions";
+      [
+        [layer.hidden ? "Show" : "Hide", () => { layer.hidden = !layer.hidden; }],
+        ["Copy", () => {
+          const clone = JSON.parse(JSON.stringify(layer));
+          clone.id = `layer-${Date.now()}`;
+          clone.label = `${clone.label || clone.type} copy`;
+          layers.push(clone);
+        }],
+        ["Up", () => { layer.zIndex = Number(layer.zIndex || 0) + 1; }],
+        ["Down", () => { layer.zIndex = Number(layer.zIndex || 0) - 1; }],
+        ["Delete", () => {
+          const index = layers.findIndex((item) => item.id === layer.id);
+          if (index >= 0) layers.splice(index, 1);
+        }]
+      ].forEach(([label, handler]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = label === "Delete" ? "danger-button tiny-button" : "secondary-button tiny-button";
+        button.textContent = label;
+        button.addEventListener("click", () => {
+          handler();
+          renderSectionsEditor();
+          sendPreviewUpdate();
+        });
+        actions.append(button);
+      });
+      row.append(select, actions);
+      list.append(row);
+    });
+  wrapper.append(list);
+  return wrapper;
+}
+
 function renderSectionsEditor() {
   sectionsEditor.innerHTML = "";
   sectionsEditor.append(Object.assign(document.createElement("h2"), { textContent: "Page Sections" }));
@@ -777,7 +1107,10 @@ function renderSectionsEditor() {
   sectionsEditor.append(list);
 
   const section = currentSection();
-  if (!section) return;
+  if (!section) {
+    sectionsEditor.append(renderLayerManager());
+    return;
+  }
   const actions = document.createElement("div");
   actions.className = "button-row";
   [
@@ -812,7 +1145,7 @@ function renderSectionsEditor() {
     });
     actions.append(button);
   });
-  sectionsEditor.append(actions, renderSectionFields(section));
+  sectionsEditor.append(actions, renderSectionFields(section), renderLayerManager());
 }
 
 function renderContentFields() {

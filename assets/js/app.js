@@ -121,7 +121,8 @@ function normalizePageBuilder(builderData) {
     ...builderData,
     theme: builderData.theme || {},
     pages: builderData.pages || {},
-    elementStyles: builderData.elementStyles || {}
+    elementStyles: builderData.elementStyles || {},
+    layers: builderData.layers || {}
   };
 }
 
@@ -332,6 +333,8 @@ function sendSelectedElement(element) {
       page: element.dataset.editablePage || currentPageKey(),
       sectionIndex: element.dataset.editableSectionIndex,
       productId: element.dataset.editableProductId || "",
+      layerId: element.dataset.editableLayerId || "",
+      layerCollection: element.dataset.editableLayerCollection || "",
       tag: element.tagName.toLowerCase(),
       href: element.closest("a")?.getAttribute("href") || element.getAttribute("href") || "",
       label: elementLabel(element)
@@ -397,6 +400,81 @@ function sectionButton(section, index, pageKey) {
     "data-editable-field": "buttonText"
   });
   return text ? `<div class="section-builder-actions"><a class="btn btn-primary" href="${link}" ${attrs}>${text}</a></div>` : "";
+}
+
+function layerValue(layer, key) {
+  return localized(layer?.[key]);
+}
+
+function layerPositionStyle(layer) {
+  const styles = {
+    left: layer.x || "0",
+    top: layer.y || "0",
+    width: layer.width || "auto",
+    height: layer.height || "auto",
+    zIndex: layer.zIndex || 1
+  };
+  const layerStyles = layer.styles || {};
+  ["backgroundColor", "color", "opacity", "borderRadius", "borderColor", "boxShadow", "padding", "fontFamily", "fontSize", "fontWeight", "fontStyle", "textDecoration", "textAlign", "lineHeight", "letterSpacing", "objectFit"].forEach((key) => {
+    if (layerStyles[key]) styles[key] = layerStyles[key];
+  });
+  return Object.entries(styles)
+    .map(([key, value]) => `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}`)
+    .join(";");
+}
+
+function layerAttrs(layer, collectionId, pageKey, sectionIndex) {
+  return editableAttrs("design-layer", `layer-${layer.id}`, `pageBuilder.layers.${collectionId}.${layer.id}`, {
+    "data-editable-source": "pageBuilderLayer",
+    "data-editable-layer-id": layer.id,
+    "data-editable-layer-collection": collectionId,
+    "data-editable-page": pageKey,
+    "data-editable-section-index": sectionIndex
+  });
+}
+
+function renderDesignLayer(layer, collectionId, pageKey, sectionIndex = "") {
+  if (!layer || layer.hidden) return "";
+  const attrs = layerAttrs(layer, collectionId, pageKey, sectionIndex);
+  const style = layerPositionStyle(layer);
+  const label = escapeAttr(layer.label || layer.type);
+  if (layer.type === "Text Box") {
+    const text = layerValue(layer, "text") || layer.label || "";
+    const content = layer.link ? `<a href="${escapeAttr(layer.link)}">${text}</a>` : text;
+    return `<div class="design-layer design-layer-text" style="${style}" aria-label="${label}" ${attrs}>${content}</div>`;
+  }
+  if (layer.type === "Button") {
+    return `<a class="design-layer design-layer-button btn btn-primary" href="${escapeAttr(layer.link || "#")}" style="${style}" aria-label="${label}" ${attrs}>${layerValue(layer, "text") || layer.label || "Button"}</a>`;
+  }
+  if (layer.type === "Image") {
+    const image = layer.image || "assets/images/placeholder-furniture.svg";
+    const img = `<img src="${escapeAttr(image)}" alt="${escapeAttr(layerValue(layer, "alt") || layer.label || "")}">`;
+    const content = layer.styles?.href ? `<a href="${escapeAttr(layer.styles.href)}">${img}</a>` : img;
+    return `<div class="design-layer design-layer-image" style="${style}" aria-label="${label}" ${attrs}>${content}</div>`;
+  }
+  if (layer.type === "Video") {
+    return `<div class="design-layer design-layer-video" style="${style}" aria-label="${label}" ${attrs}><video ${layer.controls === false ? "" : "controls"} ${layer.autoplay ? "autoplay muted" : ""} poster="${escapeAttr(layer.posterImage || "")}" src="${escapeAttr(layer.videoPath || "")}"></video></div>`;
+  }
+  const className = layer.type === "Divider / Spacer" ? "design-layer-spacer" : "design-layer-rectangle";
+  return `<div class="design-layer ${className}" style="${style}" aria-label="${label}" ${attrs}></div>`;
+}
+
+function renderDesignLayerContainer(layers, collectionId, pageKey, sectionIndex = "") {
+  const visibleLayers = layers || [];
+  if (!visibleLayers.length) return "";
+  return `<div class="design-layer-container" aria-hidden="false">${visibleLayers.map((layer) => renderDesignLayer(layer, collectionId, pageKey, sectionIndex)).join("")}</div>`;
+}
+
+function renderHomeHeroLayers() {
+  const hero = document.querySelector(".hero");
+  if (!hero) return;
+  hero.querySelector("[data-design-layer-container='homeHero']")?.remove();
+  const layers = pageBuilder.layers?.homeHero || [];
+  if (!layers.length) return;
+  hero.classList.add("has-design-layers");
+  const html = renderDesignLayerContainer(layers, "homeHero", "home")
+    .replace("aria-hidden=\"false\"", "aria-hidden=\"false\" data-design-layer-container=\"homeHero\"");
+  hero.insertAdjacentHTML("beforeend", html);
 }
 
 function renderFeatureCards(section, index, pageKey) {
@@ -493,6 +571,9 @@ function renderSection(section, index, pageKey) {
   const style = sectionStyle(section);
   const image = section.backgroundImage || section.image;
   const sectionId = section.id || `section-${index}`;
+  const layerCollectionId = `${pageKey}:${sectionId}`;
+  const sectionLayers = renderDesignLayerContainer(pageBuilder.layers?.[layerCollectionId] || [], layerCollectionId, pageKey, index);
+  const withLayers = (html) => sectionLayers ? html.replace("</section>", `${sectionLayers}</section>`) : html;
   const sectionAttrs = editableAttrs(section.type === "Hero Banner" ? "banner" : "section", `section-${sectionId}`, `pageBuilder.pages.${pageKey}.${index}`, {
     "data-editable-source": "pageBuilder",
     "data-editable-page": pageKey,
@@ -519,49 +600,49 @@ function renderSection(section, index, pageKey) {
 
   if (section.type === "Hero Banner") {
     const heroStyle = `${style};${image ? `background-image:linear-gradient(90deg,rgba(21,21,21,.68),rgba(21,21,21,.22)),url('${image}');` : ""}${section.height ? `min-height:${section.height};` : ""}`;
-    return `<section class="section-builder-section section-builder-hero${alignClass}" style="${heroStyle}" ${sectionAttrs}>
+    return withLayers(`<section class="section-builder-section section-builder-hero${alignClass}" style="${heroStyle}" ${sectionAttrs}>
       <div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${sectionButton(section, index, pageKey)}</div>
-    </section>`;
+    </section>`);
   }
 
   if (section.type === "Image Banner") {
-    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}>
+    return withLayers(`<section class="section-builder-section" style="${style}" ${sectionAttrs}>
       <div class="container section-builder-split ${section.layout === "image-right" ? "image-right" : ""}">
         <div>${image ? `<img src="${image}" alt="${title}" ${imageAttrs}>` : ""}</div>
         <div><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${sectionButton(section, index, pageKey)}</div>
       </div>
-    </section>`;
+    </section>`);
   }
 
   if (section.type === "Image Gallery") {
-    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${renderGallery(section, index, pageKey)}</div></section>`;
+    return withLayers(`<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${renderGallery(section, index, pageKey)}</div></section>`);
   }
 
   if (section.type === "Video Block") {
-    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container section-builder-video"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${section.videoPath ? `<video controls poster="${section.posterImage || ""}" src="${section.videoPath}"></video>` : ""}</div></section>`;
+    return withLayers(`<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container section-builder-video"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${section.videoPath ? `<video controls poster="${section.posterImage || ""}" src="${section.videoPath}"></video>` : ""}</div></section>`);
   }
 
   if (section.type === "CTA Banner") {
-    return `<section class="section-builder-section section-builder-cta${alignClass}" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${sectionButton(section, index, pageKey)}</div></section>`;
+    return withLayers(`<section class="section-builder-section section-builder-cta${alignClass}" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${sectionButton(section, index, pageKey)}</div></section>`);
   }
 
   if (section.type === "Feature Cards") {
-    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${renderFeatureCards(section, index, pageKey)}</div></section>`;
+    return withLayers(`<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${renderFeatureCards(section, index, pageKey)}</div></section>`);
   }
 
   if (section.type === "Product Grid") {
-    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2>${renderProductGridSection(section)}</div></section>`;
+    return withLayers(`<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2>${renderProductGridSection(section)}</div></section>`);
   }
 
   if (section.type === "FAQ Section") {
-    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2>${renderFaq(section, index, pageKey)}</div></section>`;
+    return withLayers(`<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2>${renderFaq(section, index, pageKey)}</div></section>`);
   }
 
   if (section.type === "Logo Strip") {
-    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2>${renderLogoStrip(section)}</div></section>`;
+    return withLayers(`<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2>${renderLogoStrip(section)}</div></section>`);
   }
 
-  return `<section class="section-builder-section${alignClass}" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${section.customHtml || ""}${sectionButton(section, index, pageKey)}</div></section>`;
+  return withLayers(`<section class="section-builder-section${alignClass}" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${section.customHtml || ""}${sectionButton(section, index, pageKey)}</div></section>`);
 }
 
 function renderPageSections() {
@@ -745,6 +826,7 @@ function renderCurrentPage() {
   renderProductList();
   renderProductDetail();
   renderPageSections();
+  renderHomeHeroLayers();
   setupContactSubject();
   applyStaticCmsContent();
   applySharedContentEditables();

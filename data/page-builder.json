@@ -1,16 +1,16 @@
 {
   "theme": {
-    "primaryBackground": "#1E1E1E",
-    "secondaryBackground": "#1E1E1E",
-    "textColor": "#1E1E1E",
+    "primaryBackground": "#F3EBDD",
+    "secondaryBackground": "#EFE6D8",
+    "textColor": "#151515",
     "headingColor": "#1E1E1E",
-    "buttonBackground": "#1E1E1E",
-    "buttonTextColor": "#1E1E1E",
-    "accentColor": "#1E1E1E",
-    "cardBackground": "#1E1E1E",
-    "borderColor": "#1E1E1E",
-    "linkColor": "#1E1E1E",
-    "headingFont": "Times New Roman",
+    "buttonBackground": "#151515",
+    "buttonTextColor": "#FFFFFF",
+    "accentColor": "#B08A5A",
+    "cardBackground": "#FFFFFF",
+    "borderColor": "#8C867D",
+    "linkColor": "#6B4423",
+    "headingFont": "Georgia",
     "bodyFont": "Inter",
     "baseFontSize": "16px",
     "buttonRadius": "8px",
@@ -26,21 +26,26 @@
     "contact": [],
     "catalog": []
   },
-  "elementStyles": {
-    "product-MF-SF001-quoteButton": {},
-    "product-MF-SF001-root": {},
-    "site-supplyText": {
-      "textAlign": "left",
-      "color": "#f1e9e9",
-      "fontWeight": "",
-      "fontStyle": "",
-      "textDecoration": "underline",
-      "fontFamily": "Georgia"
-    },
-    "product-MF-SF004-description": {
-      "textDecoration": "",
-      "fontStyle": "",
-      "fontWeight": ""
-    }
+  "layers": {
+    "homeHero": [
+      {
+        "id": "home-hero-green-shape",
+        "type": "Rectangle",
+        "label": "Hero green background shape",
+        "x": "58%",
+        "y": "12%",
+        "width": "34%",
+        "height": "46%",
+        "zIndex": 1,
+        "hidden": false,
+        "styles": {
+          "backgroundColor": "#25473F",
+          "opacity": "0.72",
+          "borderRadius": "36px",
+          "borderColor": "rgba(255,255,255,0.12)",
+          "boxShadow": "0 26px 90px rgba(0,0,0,0.24)"
+        }
+      }
+    ]
   }
 }

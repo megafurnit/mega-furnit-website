@@ -182,6 +182,54 @@ textarea {
   font-size: 12px;
 }
 
+.layer-list {
+  display: grid;
+  gap: 8px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.layer-row {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.layer-row.is-active {
+  border-color: var(--brass);
+  box-shadow: inset 3px 0 0 var(--brass);
+}
+
+.layer-select {
+  display: grid;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.layer-select span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mini-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tiny-button {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
 .nested-editor {
   padding: 12px;
   margin-bottom: 12px;
