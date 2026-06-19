@@ -190,6 +190,46 @@ function applyStaticCmsContent() {
   });
 }
 
+function sharedTextValue(key, fallback) {
+  return cmsText(key) || fallback;
+}
+
+function applySharedContentEditables() {
+  document.querySelectorAll(".brand strong").forEach((element) => {
+    element.textContent = sharedTextValue("brandName", "Mega Furnit");
+    assignEditable(element, "heading", "site-brandName", `siteContent.${currentLanguage}.brandName`, {
+      editableSource: "siteContent",
+      editableField: "brandName",
+      forceEditable: true
+    });
+  });
+
+  document.querySelectorAll(".site-footer .footer-inner strong").forEach((element) => {
+    element.textContent = sharedTextValue("footerBrandName", sharedTextValue("brandName", "Mega Furnit"));
+    assignEditable(element, "heading", "site-footerBrandName", `siteContent.${currentLanguage}.footerBrandName`, {
+      editableSource: "siteContent",
+      editableField: "footerBrandName",
+      forceEditable: true
+    });
+  });
+
+  const languageLabels = {
+    en: ["languageEnLabel", "EN"],
+    es: ["languageEsLabel", "ES"],
+    zh: ["languageZhLabel", "中文"]
+  };
+  document.querySelectorAll("[data-lang]").forEach((element) => {
+    const [key, fallback] = languageLabels[element.dataset.lang] || [];
+    if (!key) return;
+    element.textContent = sharedTextValue(key, fallback);
+    assignEditable(element, "button", `site-${key}`, `siteContent.${currentLanguage}.${key}`, {
+      editableSource: "siteContent",
+      editableField: key,
+      forceEditable: true
+    });
+  });
+}
+
 function markStructuralEditables() {
   const page = currentPageKey();
   [
@@ -261,7 +301,10 @@ function applyElementStyles() {
       element.style[property] = cssValue(property, value);
     });
     if (styles.altText && element.tagName === "IMG") element.alt = styles.altText;
-    if (styles.href && element.tagName === "A") element.href = styles.href;
+    if (styles.href) {
+      const link = element.tagName === "A" ? element : element.closest("a");
+      if (link) link.href = styles.href;
+    }
     if (styles.hoverBackgroundColor) element.style.setProperty("--editor-hover-bg", styles.hoverBackgroundColor);
   });
 }
@@ -290,6 +333,7 @@ function sendSelectedElement(element) {
       sectionIndex: element.dataset.editableSectionIndex,
       productId: element.dataset.editableProductId || "",
       tag: element.tagName.toLowerCase(),
+      href: element.closest("a")?.getAttribute("href") || element.getAttribute("href") || "",
       label: elementLabel(element)
     }
   }, "*");
@@ -309,11 +353,18 @@ function setupEditableInspector() {
   });
   document.addEventListener("click", (event) => {
     if (!editorPreviewMode) return;
-    const target = editableTarget(event);
-    if (!target) return;
-    event.preventDefault();
-    event.stopPropagation();
-    sendSelectedElement(target);
+    const interactive = event.target.closest("a, button");
+    const target = editableTarget(event)
+      || (interactive?.matches("[data-editable-id]") ? interactive : null)
+      || interactive?.querySelector("[data-editable-id]");
+
+    if (interactive || target) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+
+    if (target) sendSelectedElement(target);
   }, true);
 }
 
@@ -696,6 +747,7 @@ function renderCurrentPage() {
   renderPageSections();
   setupContactSubject();
   applyStaticCmsContent();
+  applySharedContentEditables();
   markStructuralEditables();
   setupEditableInspector();
 }
@@ -719,6 +771,7 @@ function applyPreviewState(previewState) {
   applyTranslations();
   applyCmsContent();
   applyStaticCmsContent();
+  applySharedContentEditables();
   applyThemeSettings();
   setupLanguageSwitcher();
   renderCurrentPage();
@@ -753,6 +806,7 @@ async function init() {
     applyTranslations();
     applyCmsContent();
     applyStaticCmsContent();
+    applySharedContentEditables();
     setupLanguageSwitcher();
     setupMobileNavigation();
     renderCurrentPage();

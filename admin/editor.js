@@ -505,7 +505,7 @@ function selectedElementControlsForType(type) {
 
   if (["button", "link"].includes(normalized)) {
     add(selectedTextControl("Button text"));
-    add(simpleInput("Link URL", selectedElement.source === "pageBuilder" ? selectedSection()?.buttonLink : selectedStyle().href || "", (value) => {
+    add(simpleInput("Link URL", selectedElement.source === "pageBuilder" ? selectedSection()?.buttonLink : selectedStyle().href || selectedElement.href || "", (value) => {
       if (selectedElement.source === "pageBuilder") updateSelectedElementValue(value, "buttonLink");
       selectedStyle().href = value;
     }));
