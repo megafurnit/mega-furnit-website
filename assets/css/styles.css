@@ -731,6 +731,24 @@ h2 {
   border-radius: var(--radius);
 }
 
+body.editor-preview-mode [data-editable-id] {
+  cursor: pointer;
+}
+
+body.editor-preview-mode [data-editable-id].is-editor-hovered {
+  outline: 1px dashed rgba(181, 137, 75, 0.75);
+  outline-offset: 3px;
+}
+
+body.editor-preview-mode [data-editable-id].is-editor-selected {
+  outline: 3px solid #b5894b;
+  outline-offset: 4px;
+}
+
+body.editor-preview-mode a[data-editable-id]:hover {
+  background: var(--editor-hover-bg, inherit);
+}
+
 @media (max-width: 900px) {
   .nav {
     grid-template-columns: 1fr auto;

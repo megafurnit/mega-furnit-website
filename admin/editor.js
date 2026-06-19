@@ -99,6 +99,7 @@ let selectedPage = "home";
 let selectedLanguage = "en";
 let selectedProductIndex = 0;
 let selectedSectionIndex = 0;
+let selectedElement = null;
 let pendingUploads = new Map();
 let aiDraft = null;
 
@@ -107,6 +108,7 @@ const languageSelector = document.querySelector("#languageSelector");
 const contentEditor = document.querySelector("#contentEditor");
 const themeEditor = document.querySelector("#themeEditor");
 const sectionsEditor = document.querySelector("#sectionsEditor");
+const selectedElementEditor = document.querySelector("#selectedElementEditor");
 const preview = document.querySelector("#sitePreview");
 const previewTitle = document.querySelector("#previewTitle");
 const statusMessage = document.querySelector("#statusMessage");
@@ -139,6 +141,7 @@ function ensureLanguageObjects() {
 function ensurePageBuilder() {
   pageBuilder.theme = { ...THEME_DEFAULTS, ...(pageBuilder.theme || {}) };
   pageBuilder.pages = pageBuilder.pages || {};
+  pageBuilder.elementStyles = pageBuilder.elementStyles || {};
   SECTION_PAGES.forEach((page) => {
     pageBuilder.pages[page] = pageBuilder.pages[page] || [];
   });
@@ -185,6 +188,8 @@ function sendPreviewUpdate() {
   if (!preview.contentWindow) return;
   preview.contentWindow.postMessage({
     type: "mega-furnit-preview",
+    editorPreview: true,
+    selectedEditableId: selectedElement?.id || "",
     language: selectedLanguage,
     cmsContent: siteContent,
     productData,
@@ -291,6 +296,298 @@ function colorInput(label, value, onInput, resetValue) {
   reset.addEventListener("click", () => update(resetValue));
   wrapper.append(labelElement, split, swatches, reset);
   return wrapper;
+}
+
+function ensureElementStyles() {
+  pageBuilder.elementStyles = pageBuilder.elementStyles || {};
+  return pageBuilder.elementStyles;
+}
+
+function selectedStyle() {
+  if (!selectedElement?.id) return {};
+  const styles = ensureElementStyles();
+  styles[selectedElement.id] = styles[selectedElement.id] || {};
+  return styles[selectedElement.id];
+}
+
+function productById(productId) {
+  return productData.products.find((product) => product.id === productId);
+}
+
+function resolveEditablePath(path) {
+  if (!path) return null;
+  const parts = path.split(".");
+  if (parts[0] === "siteContent") {
+    return { parent: siteContent[parts[1]], key: parts[2] };
+  }
+  if (parts[0] === "products") {
+    const product = productById(parts[1]);
+    return product ? { parent: product, key: parts[2] } : null;
+  }
+  if (parts[0] !== "pageBuilder") return null;
+  let target = pageBuilder;
+  for (let index = 1; index < parts.length - 1; index += 1) {
+    const part = parts[index];
+    target = Array.isArray(target) ? target[Number(part)] : target?.[part];
+    if (target === undefined || target === null) return null;
+  }
+  return { parent: target, key: parts[parts.length - 1] };
+}
+
+function valueFromEditablePath(path) {
+  const resolved = resolveEditablePath(path);
+  if (!resolved?.parent || !resolved.key) return "";
+  const value = resolved.parent[resolved.key];
+  return typeof value === "object" ? localized(value) : (value || "");
+}
+
+function setValueAtEditablePath(path, value) {
+  const resolved = resolveEditablePath(path);
+  if (!resolved?.parent || !resolved.key) return false;
+  const current = resolved.parent[resolved.key];
+  if (current && typeof current === "object" && !Array.isArray(current)) {
+    current[selectedLanguage] = value;
+  } else {
+    resolved.parent[resolved.key] = value;
+  }
+  return true;
+}
+
+function selectedSection() {
+  if (selectedElement?.source !== "pageBuilder") return null;
+  const page = selectedElement.page || selectedPage;
+  const index = Number(selectedElement.sectionIndex);
+  if (!Number.isInteger(index)) return null;
+  return pageBuilder.pages?.[page]?.[index] || null;
+}
+
+function selectedElementValue() {
+  if (!selectedElement) return "";
+  const pathValue = valueFromEditablePath(selectedElement.path);
+  if (pathValue) return pathValue;
+  const field = selectedElement.field;
+  if (selectedElement.source === "siteContent") {
+    return siteContent[selectedLanguage]?.[field] || "";
+  }
+  if (selectedElement.source === "products") {
+    const product = productById(selectedElement.productId);
+    if (!product) return "";
+    if (["name", "description", "materials", "category", "style", "customOptions"].includes(field)) {
+      return localized(product[field]);
+    }
+    return product[field] || "";
+  }
+  if (selectedElement.source === "pageBuilder") {
+    const section = selectedSection();
+    if (!section) return "";
+    if (["title", "heading", "body", "subtitle", "buttonText"].includes(field)) {
+      return localized(section[field]);
+    }
+    return section[field] || "";
+  }
+  return "";
+}
+
+function updateSelectedElementValue(value, overrideField) {
+  if (!selectedElement) return;
+  if (!overrideField && setValueAtEditablePath(selectedElement.path, value)) return;
+  const field = overrideField || selectedElement.field;
+  if (selectedElement.source === "siteContent") {
+    siteContent[selectedLanguage][field] = value;
+  } else if (selectedElement.source === "products") {
+    const product = productById(selectedElement.productId);
+    if (!product) return;
+    if (["name", "description", "materials", "category", "style", "customOptions"].includes(field)) {
+      setLocalized(product, field, value);
+    } else {
+      product[field] = value;
+    }
+  } else if (selectedElement.source === "pageBuilder") {
+    const section = selectedSection();
+    if (!section) return;
+    if (["title", "heading", "body", "subtitle", "buttonText"].includes(field)) {
+      localizeSection(section, field, value);
+    } else {
+      section[field] = value;
+    }
+  }
+}
+
+function selectedTextControl(label = "Text content") {
+  return simpleInput(label, selectedElementValue(), (value) => {
+    updateSelectedElementValue(value);
+  }, selectedElement?.type === "button" || selectedElement?.type === "link" ? "text" : "textarea");
+}
+
+function selectedStyleInput(label, property, type = "text") {
+  return simpleInput(label, selectedStyle()[property] || "", (value) => {
+    if (value) selectedStyle()[property] = value;
+    else delete selectedStyle()[property];
+  }, type);
+}
+
+function selectedStyleColor(label, property, fallback = "#151515") {
+  return colorInput(label, selectedStyle()[property] || fallback, (value) => {
+    if (value) selectedStyle()[property] = value;
+    else delete selectedStyle()[property];
+  }, fallback);
+}
+
+function selectedStyleSelect(label, property, options) {
+  return selectInput(label, selectedStyle()[property] || options[0], options, (value) => {
+    if (value) selectedStyle()[property] = value;
+    else delete selectedStyle()[property];
+  });
+}
+
+function checkboxControl(label, checked, onChange) {
+  const wrapper = document.createElement("label");
+  wrapper.className = "check-field";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.checked = Boolean(checked);
+  input.addEventListener("change", () => {
+    onChange(input.checked);
+    sendPreviewUpdate();
+  });
+  wrapper.append(input, document.createTextNode(label));
+  return wrapper;
+}
+
+function moveSelectedSection(direction) {
+  const page = selectedElement?.page || selectedPage;
+  const sections = pageBuilder.pages?.[page] || [];
+  const index = Number(selectedElement?.sectionIndex);
+  const nextIndex = index + direction;
+  if (!Number.isInteger(index) || nextIndex < 0 || nextIndex >= sections.length) return;
+  [sections[index], sections[nextIndex]] = [sections[nextIndex], sections[index]];
+  selectedElement.sectionIndex = String(nextIndex);
+  selectedSectionIndex = nextIndex;
+  renderSectionsEditor();
+  renderSelectedElementEditor();
+  sendPreviewUpdate();
+}
+
+function clearSelectedElement() {
+  selectedElement = null;
+  renderSelectedElementEditor();
+  preview.contentWindow?.postMessage({ type: "mega-furnit-clear-selection" }, "*");
+  sendPreviewUpdate();
+}
+
+function selectedElementControlsForType(type) {
+  const controls = document.createElement("div");
+  const add = (node) => controls.append(node);
+  const normalized = type === "paragraph" ? "text" : type;
+
+  if (["heading", "text"].includes(normalized)) {
+    add(selectedTextControl("Text content"));
+    add(selectedStyleSelect("Font family", "fontFamily", FONTS));
+    add(selectedStyleInput("Font size", "fontSize"));
+    add(selectedStyleSelect("Font weight", "fontWeight", ["", "400", "500", "600", "700", "800"]));
+    add(checkboxControl("Bold", selectedStyle().fontWeight === "700" || selectedStyle().fontWeight === "800", (checked) => {
+      selectedStyle().fontWeight = checked ? "700" : "";
+    }));
+    add(checkboxControl("Italic", selectedStyle().fontStyle === "italic", (checked) => {
+      selectedStyle().fontStyle = checked ? "italic" : "";
+    }));
+    add(checkboxControl("Underline", selectedStyle().textDecoration === "underline", (checked) => {
+      selectedStyle().textDecoration = checked ? "underline" : "";
+    }));
+    add(selectedStyleColor("Text color", "color", "#151515"));
+    add(selectedStyleSelect("Alignment", "textAlign", ["", "left", "center", "right"]));
+    add(selectedStyleInput("Line height", "lineHeight"));
+    add(selectedStyleInput("Letter spacing", "letterSpacing"));
+    return controls;
+  }
+
+  if (["button", "link"].includes(normalized)) {
+    add(selectedTextControl("Button text"));
+    add(simpleInput("Link URL", selectedElement.source === "pageBuilder" ? selectedSection()?.buttonLink : selectedStyle().href || "", (value) => {
+      if (selectedElement.source === "pageBuilder") updateSelectedElementValue(value, "buttonLink");
+      selectedStyle().href = value;
+    }));
+    add(selectedStyleColor("Background color", "backgroundColor", "#151515"));
+    add(selectedStyleColor("Text color", "color", "#FFFFFF"));
+    add(selectedStyleInput("Font size", "fontSize"));
+    add(selectedStyleInput("Border radius", "borderRadius"));
+    add(selectedStyleInput("Padding", "padding"));
+    add(selectedStyleColor("Border color", "borderColor", "#8C867D"));
+    add(selectedStyleColor("Hover background color", "hoverBackgroundColor", "#1E1E1E"));
+    return controls;
+  }
+
+  if (normalized === "image") {
+    add(simpleInput("Image path", selectedElementValue(), (value) => {
+      updateSelectedElementValue(value, selectedElement.field || "image");
+    }));
+    add(selectedStyleInput("Alt text", "altText"));
+    add(selectedStyleInput("Width", "width"));
+    add(selectedStyleInput("Height", "height"));
+    add(selectedStyleInput("Border radius", "borderRadius"));
+    add(selectedStyleSelect("Object fit", "objectFit", ["", "cover", "contain", "fill"]));
+    add(selectedStyleInput("Link URL", "href"));
+    return controls;
+  }
+
+  add(selectedStyleColor("Background color", "backgroundColor", "#F3EBDD"));
+  add(simpleInput("Background image path", selectedSection()?.backgroundImage || selectedStyle().backgroundImage || "", (value) => {
+    const section = selectedSection();
+    if (section) section.backgroundImage = value;
+    selectedStyle().backgroundImage = value;
+  }));
+  add(selectedStyleColor("Text color", "color", "#151515"));
+  add(selectedStyleInput("Padding", "padding"));
+  add(selectedStyleInput("Margin", "margin"));
+  add(selectedStyleInput("Min height", "minHeight"));
+  add(selectedStyleInput("Border radius", "borderRadius"));
+  add(selectedStyleColor("Border color", "borderColor", "#8C867D"));
+  add(selectedStyleInput("Shadow", "boxShadow"));
+
+  const section = selectedSection();
+  if (section) {
+    add(checkboxControl("Hide section", section.hidden, (checked) => {
+      section.hidden = checked;
+      renderSectionsEditor();
+    }));
+    const row = document.createElement("div");
+    row.className = "button-row";
+    const up = document.createElement("button");
+    up.type = "button";
+    up.className = "secondary-button";
+    up.textContent = "Move section up";
+    up.addEventListener("click", () => moveSelectedSection(-1));
+    const down = document.createElement("button");
+    down.type = "button";
+    down.className = "secondary-button";
+    down.textContent = "Move section down";
+    down.addEventListener("click", () => moveSelectedSection(1));
+    row.append(up, down);
+    add(row);
+  }
+  return controls;
+}
+
+function renderSelectedElementEditor() {
+  selectedElementEditor.innerHTML = "";
+  selectedElementEditor.append(Object.assign(document.createElement("h2"), { textContent: "Selected Element" }));
+  if (!selectedElement) {
+    const note = document.createElement("p");
+    note.className = "help-text";
+    note.textContent = "Click an element in the preview to edit it.";
+    selectedElementEditor.append(note);
+    return;
+  }
+
+  const meta = document.createElement("div");
+  meta.className = "selected-meta";
+  meta.innerHTML = `<strong>${selectedElement.type}</strong><span>ID: ${selectedElement.id}</span>`;
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.className = "secondary-button";
+  clear.textContent = "Clear selection";
+  clear.addEventListener("click", clearSelectedElement);
+  selectedElementEditor.append(meta, clear, selectedElementControlsForType(selectedElement.type));
 }
 
 function renderThemeEditor() {
@@ -884,6 +1181,17 @@ function downloadChanges() {
   statusMessage.textContent = "Downloaded updated JSON files.";
 }
 
+window.addEventListener("message", (event) => {
+  if (event.data?.type !== "mega-furnit-element-selected") return;
+  selectedElement = event.data.element;
+  if (selectedElement?.page === selectedPage && selectedElement.sectionIndex !== undefined) {
+    selectedSectionIndex = Number(selectedElement.sectionIndex);
+    renderSectionsEditor();
+  }
+  renderSelectedElementEditor();
+  sendPreviewUpdate();
+});
+
 async function init() {
   [siteContent, productData, pageBuilder] = await Promise.all([
     loadJson("/data/site-content.json"),
@@ -895,6 +1203,8 @@ async function init() {
   pageSelector.addEventListener("change", () => {
     selectedPage = pageSelector.value;
     selectedSectionIndex = 0;
+    selectedElement = null;
+    renderSelectedElementEditor();
     renderContentFields();
     renderThemeEditor();
     renderSectionsEditor();
@@ -902,6 +1212,8 @@ async function init() {
   });
   languageSelector.addEventListener("change", () => {
     selectedLanguage = languageSelector.value;
+    selectedElement = null;
+    renderSelectedElementEditor();
     renderContentFields();
     renderThemeEditor();
     renderSectionsEditor();
@@ -916,6 +1228,7 @@ async function init() {
   aiApplyButton.addEventListener("click", applyAiDraft);
   document.querySelector("#desktopPreview").addEventListener("click", () => iframeWrap.className = "iframe-wrap is-desktop");
   document.querySelector("#mobilePreview").addEventListener("click", () => iframeWrap.className = "iframe-wrap is-mobile");
+  renderSelectedElementEditor();
   renderThemeEditor();
   renderSectionsEditor();
   renderContentFields();

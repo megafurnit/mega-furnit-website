@@ -190,6 +190,49 @@ textarea {
   background: #fff;
 }
 
+.selected-panel {
+  border-color: rgba(181, 137, 75, 0.45);
+  box-shadow: inset 3px 0 0 var(--brass);
+}
+
+.selected-meta {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.selected-meta strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.compact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.check-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  color: #40504b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.check-field input {
+  width: auto;
+}
+
 .product-row {
   display: grid;
   grid-template-columns: 1fr auto;

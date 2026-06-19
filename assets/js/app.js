@@ -7,6 +7,9 @@ let cmsContent = {};
 let pageBuilder = {};
 let products = [];
 let currentLanguage = localStorage.getItem("megaFurnitLang") || DEFAULT_LANGUAGE;
+let editorPreviewMode = false;
+let selectedEditableId = "";
+let inspectorEventsBound = false;
 
 function normalizeLanguage(language) {
   return LANGUAGES.includes(language) ? language : DEFAULT_LANGUAGE;
@@ -25,6 +28,35 @@ function t(key) {
 
 function cmsText(key) {
   return cmsContent[currentLanguage]?.[key] || cmsContent[DEFAULT_LANGUAGE]?.[key] || "";
+}
+
+function escapeAttr(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function editableAttrs(type, id, path, extra = {}) {
+  const attrs = {
+    "data-editable-id": id,
+    "data-editable-type": type,
+    "data-editable-path": path,
+    ...extra
+  };
+  return Object.entries(attrs)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .map(([key, value]) => `${key}="${escapeAttr(value)}"`)
+    .join(" ");
+}
+
+function productEditable(product, type, field) {
+  return editableAttrs(type, `product-${product.id}-${field}`, `products.${product.id}.${field}`, {
+    "data-editable-source": "products",
+    "data-editable-product-id": product.id,
+    "data-editable-field": field
+  });
 }
 
 async function loadJson(path) {
@@ -54,7 +86,8 @@ function normalizePageBuilder(builderData) {
   return {
     ...builderData,
     theme: builderData.theme || {},
-    pages: builderData.pages || {}
+    pages: builderData.pages || {},
+    elementStyles: builderData.elementStyles || {}
   };
 }
 
@@ -84,7 +117,14 @@ function applyTranslations() {
 
 function applyCmsContent() {
   document.querySelectorAll("[data-cms]").forEach((element) => {
-    element.textContent = cmsText(element.dataset.cms);
+    const key = element.dataset.cms;
+    element.textContent = cmsText(key);
+    const type = element.matches("a, button") ? "button" : (element.matches("h1, h2, h3, h4, h5, h6") ? "heading" : "text");
+    element.dataset.editableId = `site-${key}`;
+    element.dataset.editableType = type;
+    element.dataset.editablePath = `siteContent.${currentLanguage}.${key}`;
+    element.dataset.editableSource = "siteContent";
+    element.dataset.editableField = key;
   });
 }
 
@@ -114,6 +154,77 @@ function applyThemeSettings() {
   });
 }
 
+function cssValue(property, value) {
+  if (property === "backgroundImage" && value) return `url("${value}")`;
+  return value;
+}
+
+function applyElementStyles() {
+  document.querySelectorAll("[data-editable-id]").forEach((element) => {
+    element.classList.toggle("is-editor-selected", editorPreviewMode && element.dataset.editableId === selectedEditableId);
+    const styles = pageBuilder.elementStyles?.[element.dataset.editableId];
+    if (!styles) return;
+    Object.entries(styles).forEach(([property, value]) => {
+      if (!value || ["altText", "href", "hoverBackgroundColor"].includes(property)) return;
+      element.style[property] = cssValue(property, value);
+    });
+    if (styles.altText && element.tagName === "IMG") element.alt = styles.altText;
+    if (styles.href && element.tagName === "A") element.href = styles.href;
+    if (styles.hoverBackgroundColor) element.style.setProperty("--editor-hover-bg", styles.hoverBackgroundColor);
+  });
+}
+
+function editableTarget(event) {
+  return event.target.closest("[data-editable-id]");
+}
+
+function elementLabel(element) {
+  if (element.tagName === "IMG") return element.alt || element.src;
+  return (element.textContent || element.getAttribute("aria-label") || "").trim().slice(0, 120);
+}
+
+function sendSelectedElement(element) {
+  selectedEditableId = element.dataset.editableId;
+  applyElementStyles();
+  window.parent.postMessage({
+    type: "mega-furnit-element-selected",
+    element: {
+      id: element.dataset.editableId,
+      type: element.dataset.editableType || "background",
+      path: element.dataset.editablePath || "",
+      source: element.dataset.editableSource || "",
+      field: element.dataset.editableField || "",
+      page: element.dataset.editablePage || currentPageKey(),
+      sectionIndex: element.dataset.editableSectionIndex,
+      productId: element.dataset.editableProductId || "",
+      tag: element.tagName.toLowerCase(),
+      label: elementLabel(element)
+    }
+  }, "*");
+}
+
+function setupEditableInspector() {
+  document.body.classList.toggle("editor-preview-mode", editorPreviewMode);
+  applyElementStyles();
+  if (inspectorEventsBound) return;
+  inspectorEventsBound = true;
+  document.addEventListener("mouseover", (event) => {
+    if (!editorPreviewMode) return;
+    editableTarget(event)?.classList.add("is-editor-hovered");
+  });
+  document.addEventListener("mouseout", (event) => {
+    editableTarget(event)?.classList.remove("is-editor-hovered");
+  });
+  document.addEventListener("click", (event) => {
+    if (!editorPreviewMode) return;
+    const target = editableTarget(event);
+    if (!target) return;
+    event.preventDefault();
+    event.stopPropagation();
+    sendSelectedElement(target);
+  }, true);
+}
+
 function currentPageKey() {
   const path = window.location.pathname.split("/").pop() || "index.html";
   if (path === "index.html" || path === "") return "home";
@@ -133,39 +244,84 @@ function sectionStyle(section) {
   return styles.join(";");
 }
 
-function sectionButton(section) {
+function sectionButton(section, index, pageKey) {
   const text = sectionText(section, "buttonText");
   const link = section.buttonLink || "#";
-  return text ? `<div class="section-builder-actions"><a class="btn btn-primary" href="${link}">${text}</a></div>` : "";
+  const attrs = editableAttrs("button", `section-${section.id || index}-button`, `pageBuilder.pages.${pageKey}.${index}.buttonText`, {
+    "data-editable-source": "pageBuilder",
+    "data-editable-page": pageKey,
+    "data-editable-section-index": index,
+    "data-editable-field": "buttonText"
+  });
+  return text ? `<div class="section-builder-actions"><a class="btn btn-primary" href="${link}" ${attrs}>${text}</a></div>` : "";
 }
 
-function renderFeatureCards(section) {
+function renderFeatureCards(section, index, pageKey) {
   const cards = section.cards || [];
-  return `<div class="section-builder-card-grid">${cards.map((card) => `
-    <article class="section-builder-card">
-      ${card.image ? `<img src="${card.image}" alt="${sectionText(card, "title")}">` : ""}
-      <h3>${sectionText(card, "title")}</h3>
-      <p>${sectionText(card, "body")}</p>
+  return `<div class="section-builder-card-grid">${cards.map((card, cardIndex) => `
+    <article class="section-builder-card" ${editableAttrs("card", `section-${section.id || index}-card-${cardIndex}`, `pageBuilder.pages.${pageKey}.${index}.cards.${cardIndex}`, {
+      "data-editable-source": "pageBuilder",
+      "data-editable-page": pageKey,
+      "data-editable-section-index": index
+    })}>
+      ${card.image ? `<img src="${card.image}" alt="${sectionText(card, "title")}" ${editableAttrs("image", `section-${section.id || index}-card-${cardIndex}-image`, `pageBuilder.pages.${pageKey}.${index}.cards.${cardIndex}.image`, {
+        "data-editable-source": "pageBuilder",
+        "data-editable-page": pageKey,
+        "data-editable-section-index": index,
+        "data-editable-field": "image"
+      })}>` : ""}
+      <h3 ${editableAttrs("heading", `section-${section.id || index}-card-${cardIndex}-title`, `pageBuilder.pages.${pageKey}.${index}.cards.${cardIndex}.title`, {
+        "data-editable-source": "pageBuilder",
+        "data-editable-page": pageKey,
+        "data-editable-section-index": index,
+        "data-editable-field": "title"
+      })}>${sectionText(card, "title")}</h3>
+      <p ${editableAttrs("text", `section-${section.id || index}-card-${cardIndex}-body`, `pageBuilder.pages.${pageKey}.${index}.cards.${cardIndex}.body`, {
+        "data-editable-source": "pageBuilder",
+        "data-editable-page": pageKey,
+        "data-editable-section-index": index,
+        "data-editable-field": "body"
+      })}>${sectionText(card, "body")}</p>
     </article>
   `).join("")}</div>`;
 }
 
-function renderGallery(section) {
+function renderGallery(section, index, pageKey) {
   const images = section.images || [];
-  return `<div class="section-builder-gallery">${images.map((item) => `
+  return `<div class="section-builder-gallery">${images.map((item, imageIndex) => `
     <figure>
-      <img src="${item.image || "assets/images/placeholder-furniture.svg"}" alt="${sectionText(item, "caption")}">
-      ${sectionText(item, "caption") ? `<figcaption>${sectionText(item, "caption")}</figcaption>` : ""}
+      <img src="${item.image || "assets/images/placeholder-furniture.svg"}" alt="${sectionText(item, "caption")}" ${editableAttrs("image", `section-${section.id || index}-gallery-${imageIndex}-image`, `pageBuilder.pages.${pageKey}.${index}.images.${imageIndex}.image`, {
+        "data-editable-source": "pageBuilder",
+        "data-editable-page": pageKey,
+        "data-editable-section-index": index,
+        "data-editable-field": "image"
+      })}>
+      ${sectionText(item, "caption") ? `<figcaption ${editableAttrs("text", `section-${section.id || index}-gallery-${imageIndex}-caption`, `pageBuilder.pages.${pageKey}.${index}.images.${imageIndex}.caption`, {
+        "data-editable-source": "pageBuilder",
+        "data-editable-page": pageKey,
+        "data-editable-section-index": index,
+        "data-editable-field": "caption"
+      })}>${sectionText(item, "caption")}</figcaption>` : ""}
     </figure>
   `).join("")}</div>`;
 }
 
-function renderFaq(section) {
+function renderFaq(section, index, pageKey) {
   const items = section.items || [];
-  return `<div class="section-builder-faq">${items.map((item) => `
+  return `<div class="section-builder-faq">${items.map((item, itemIndex) => `
     <details>
-      <summary>${sectionText(item, "question")}</summary>
-      <p>${sectionText(item, "answer")}</p>
+      <summary ${editableAttrs("heading", `section-${section.id || index}-faq-${itemIndex}-question`, `pageBuilder.pages.${pageKey}.${index}.items.${itemIndex}.question`, {
+        "data-editable-source": "pageBuilder",
+        "data-editable-page": pageKey,
+        "data-editable-section-index": index,
+        "data-editable-field": "question"
+      })}>${sectionText(item, "question")}</summary>
+      <p ${editableAttrs("text", `section-${section.id || index}-faq-${itemIndex}-answer`, `pageBuilder.pages.${pageKey}.${index}.items.${itemIndex}.answer`, {
+        "data-editable-source": "pageBuilder",
+        "data-editable-page": pageKey,
+        "data-editable-section-index": index,
+        "data-editable-field": "answer"
+      })}>${sectionText(item, "answer")}</p>
     </details>
   `).join("")}</div>`;
 }
@@ -186,59 +342,83 @@ function renderProductGridSection(section) {
   return `<div class="product-grid">${selected.map(productCard).join("")}</div>`;
 }
 
-function renderSection(section) {
+function renderSection(section, index, pageKey) {
   if (!section || section.hidden) return "";
   const title = sectionText(section, "title") || sectionText(section, "heading");
   const body = sectionText(section, "body") || sectionText(section, "subtitle");
   const alignClass = section.alignment ? ` align-${section.alignment}` : "";
   const style = sectionStyle(section);
   const image = section.backgroundImage || section.image;
+  const sectionId = section.id || `section-${index}`;
+  const sectionAttrs = editableAttrs(section.type === "Hero Banner" ? "banner" : "section", `section-${sectionId}`, `pageBuilder.pages.${pageKey}.${index}`, {
+    "data-editable-source": "pageBuilder",
+    "data-editable-page": pageKey,
+    "data-editable-section-index": index
+  });
+  const headingAttrs = editableAttrs("heading", `section-${sectionId}-heading`, `pageBuilder.pages.${pageKey}.${index}.title`, {
+    "data-editable-source": "pageBuilder",
+    "data-editable-page": pageKey,
+    "data-editable-section-index": index,
+    "data-editable-field": section.heading ? "heading" : "title"
+  });
+  const bodyAttrs = editableAttrs("text", `section-${sectionId}-body`, `pageBuilder.pages.${pageKey}.${index}.body`, {
+    "data-editable-source": "pageBuilder",
+    "data-editable-page": pageKey,
+    "data-editable-section-index": index,
+    "data-editable-field": section.subtitle ? "subtitle" : "body"
+  });
+  const imageAttrs = editableAttrs("image", `section-${sectionId}-image`, `pageBuilder.pages.${pageKey}.${index}.image`, {
+    "data-editable-source": "pageBuilder",
+    "data-editable-page": pageKey,
+    "data-editable-section-index": index,
+    "data-editable-field": section.backgroundImage ? "backgroundImage" : "image"
+  });
 
   if (section.type === "Hero Banner") {
     const heroStyle = `${style};${image ? `background-image:linear-gradient(90deg,rgba(21,21,21,.68),rgba(21,21,21,.22)),url('${image}');` : ""}${section.height ? `min-height:${section.height};` : ""}`;
-    return `<section class="section-builder-section section-builder-hero${alignClass}" style="${heroStyle}">
-      <div class="container"><h2>${title}</h2><p>${body}</p>${sectionButton(section)}</div>
+    return `<section class="section-builder-section section-builder-hero${alignClass}" style="${heroStyle}" ${sectionAttrs}>
+      <div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${sectionButton(section, index, pageKey)}</div>
     </section>`;
   }
 
   if (section.type === "Image Banner") {
-    return `<section class="section-builder-section" style="${style}">
+    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}>
       <div class="container section-builder-split ${section.layout === "image-right" ? "image-right" : ""}">
-        <div>${image ? `<img src="${image}" alt="${title}">` : ""}</div>
-        <div><h2>${title}</h2><p>${body}</p>${sectionButton(section)}</div>
+        <div>${image ? `<img src="${image}" alt="${title}" ${imageAttrs}>` : ""}</div>
+        <div><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${sectionButton(section, index, pageKey)}</div>
       </div>
     </section>`;
   }
 
   if (section.type === "Image Gallery") {
-    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2><p>${body}</p>${renderGallery(section)}</div></section>`;
+    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${renderGallery(section, index, pageKey)}</div></section>`;
   }
 
   if (section.type === "Video Block") {
-    return `<section class="section-builder-section" style="${style}"><div class="container section-builder-video"><h2>${title}</h2><p>${body}</p>${section.videoPath ? `<video controls poster="${section.posterImage || ""}" src="${section.videoPath}"></video>` : ""}</div></section>`;
+    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container section-builder-video"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${section.videoPath ? `<video controls poster="${section.posterImage || ""}" src="${section.videoPath}"></video>` : ""}</div></section>`;
   }
 
   if (section.type === "CTA Banner") {
-    return `<section class="section-builder-section section-builder-cta${alignClass}" style="${style}"><div class="container"><h2>${title}</h2><p>${body}</p>${sectionButton(section)}</div></section>`;
+    return `<section class="section-builder-section section-builder-cta${alignClass}" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${sectionButton(section, index, pageKey)}</div></section>`;
   }
 
   if (section.type === "Feature Cards") {
-    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2><p>${body}</p>${renderFeatureCards(section)}</div></section>`;
+    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${renderFeatureCards(section, index, pageKey)}</div></section>`;
   }
 
   if (section.type === "Product Grid") {
-    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2>${renderProductGridSection(section)}</div></section>`;
+    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2>${renderProductGridSection(section)}</div></section>`;
   }
 
   if (section.type === "FAQ Section") {
-    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2>${renderFaq(section)}</div></section>`;
+    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2>${renderFaq(section, index, pageKey)}</div></section>`;
   }
 
   if (section.type === "Logo Strip") {
-    return `<section class="section-builder-section" style="${style}"><div class="container"><h2>${title}</h2>${renderLogoStrip(section)}</div></section>`;
+    return `<section class="section-builder-section" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2>${renderLogoStrip(section)}</div></section>`;
   }
 
-  return `<section class="section-builder-section${alignClass}" style="${style}"><div class="container"><h2>${title}</h2><p>${body}</p>${section.customHtml || ""}${sectionButton(section)}</div></section>`;
+  return `<section class="section-builder-section${alignClass}" style="${style}" ${sectionAttrs}><div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${section.customHtml || ""}${sectionButton(section, index, pageKey)}</div></section>`;
 }
 
 function renderPageSections() {
@@ -248,7 +428,7 @@ function renderPageSections() {
   if (!sections.length) return;
   const wrapper = document.createElement("div");
   wrapper.dataset.pageSections = pageKey;
-  wrapper.innerHTML = sections.map(renderSection).join("");
+  wrapper.innerHTML = sections.map((section, index) => renderSection(section, index, pageKey)).join("");
   document.querySelector("main")?.append(wrapper);
 }
 
@@ -287,23 +467,23 @@ function whatsappHref(product) {
 
 function productCard(product) {
   return `
-    <article class="product-card">
+    <article class="product-card" ${productEditable(product, "product-card", "root")}>
       <a href="product-detail.html?id=${encodeURIComponent(product.id)}" aria-label="${localized(product.name)}">
-        <img src="${product.image}" alt="${localized(product.name)}">
+        <img src="${product.image}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
       </a>
       <div class="product-body">
         <div>
-          <div class="product-kicker">${product.id} · ${localized(product.category)}</div>
-          <h3><a href="product-detail.html?id=${encodeURIComponent(product.id)}">${localized(product.name)}</a></h3>
+          <div class="product-kicker" ${productEditable(product, "text", "category")}>${product.id} · ${localized(product.category)}</div>
+          <h3><a href="product-detail.html?id=${encodeURIComponent(product.id)}" ${productEditable(product, "heading", "name")}>${localized(product.name)}</a></h3>
         </div>
-        <p>${localized(product.description)}</p>
+        <p ${productEditable(product, "text", "description")}>${localized(product.description)}</p>
         <div class="product-meta">
           <span class="pill">${t(product.factoryType)}</span>
           <span class="pill">${localized(product.style)}</span>
           <span class="pill">${product.moq}</span>
         </div>
         <div class="cta-row">
-          <a class="btn btn-primary" href="${inquiryHref(product)}">${t("requestQuote")}</a>
+          <a class="btn btn-primary" href="${inquiryHref(product)}" ${productEditable(product, "button", "quoteButton")}>${t("requestQuote")}</a>
           <a class="btn btn-secondary" href="product-detail.html?id=${encodeURIComponent(product.id)}">${t("details")}</a>
         </div>
       </div>
@@ -381,24 +561,24 @@ function renderProductDetail() {
 
   detail.innerHTML = `
     <div>
-      <img class="detail-image" src="${product.image}" alt="${localized(product.name)}">
+      <img class="detail-image" src="${product.image}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
     </div>
     <aside class="detail-panel">
-      <div class="product-id">${product.id} · ${localized(product.category)}</div>
-      <h1>${localized(product.name)}</h1>
-      <p class="lead">${localized(product.description)}</p>
+      <div class="product-id" ${productEditable(product, "text", "category")}>${product.id} · ${localized(product.category)}</div>
+      <h1 ${productEditable(product, "heading", "name")}>${localized(product.name)}</h1>
+      <p class="lead" ${productEditable(product, "text", "description")}>${localized(product.description)}</p>
       <dl class="spec-list">
         <div class="spec-row"><dt>${t("factoryType")}</dt><dd>${t(product.factoryType)}</dd></div>
         <div class="spec-row"><dt>${t("style")}</dt><dd>${localized(product.style)}</dd></div>
-        <div class="spec-row"><dt>${t("dimensions")}</dt><dd>${product.dimensions}</dd></div>
-        <div class="spec-row"><dt>${t("materials")}</dt><dd>${localized(product.materials)}</dd></div>
+        <div class="spec-row"><dt>${t("dimensions")}</dt><dd ${productEditable(product, "text", "dimensions")}>${product.dimensions}</dd></div>
+        <div class="spec-row"><dt>${t("materials")}</dt><dd ${productEditable(product, "text", "materials")}>${localized(product.materials)}</dd></div>
         <div class="spec-row"><dt>${t("moq")}</dt><dd>${product.moq}</dd></div>
         <div class="spec-row"><dt>${t("fob")}</dt><dd>${product.fob ? t("available") : "N/A"}</dd></div>
         <div class="spec-row"><dt>${t("loading")}</dt><dd>${product.loading40hq}</dd></div>
         <div class="spec-row"><dt>${t("customOptions")}</dt><dd>${localized(product.customOptions)}</dd></div>
       </dl>
       <div class="cta-row">
-        <a class="btn btn-primary" href="${inquiryHref(product)}">${t("requestQuote")}</a>
+        <a class="btn btn-primary" href="${inquiryHref(product)}" ${productEditable(product, "button", "quoteButton")}>${t("requestQuote")}</a>
         <a class="btn btn-secondary" target="_blank" rel="noopener" href="${whatsappHref(product)}">${t("whatsapp")}</a>
       </div>
     </aside>
@@ -422,10 +602,13 @@ function renderCurrentPage() {
   renderProductDetail();
   renderPageSections();
   setupContactSubject();
+  setupEditableInspector();
 }
 
 function applyPreviewState(previewState) {
   if (!previewState || previewState.type !== "mega-furnit-preview") return;
+  editorPreviewMode = Boolean(previewState.editorPreview);
+  selectedEditableId = previewState.selectedEditableId || "";
   if (previewState.language) {
     currentLanguage = normalizeLanguage(previewState.language);
   }
@@ -446,6 +629,11 @@ function applyPreviewState(previewState) {
 }
 
 window.addEventListener("message", (event) => {
+  if (event.data?.type === "mega-furnit-clear-selection") {
+    selectedEditableId = "";
+    applyElementStyles();
+    return;
+  }
   applyPreviewState(event.data);
 });
 
