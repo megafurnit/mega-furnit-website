@@ -61,7 +61,7 @@
     "aboutIntro": "Mega Furnit是一家面向国际买家的B2B家具制造和供应链公司。",
     "aboutBody": "我们的模式服务进口商、批发商、零售商、电商卖家和区域分销商，提供可靠产品项目、清晰沟通和可扩展产能。",
     "capabilitiesIntro": "Mega Furnit整合自有工厂、越南产能和合作工厂，支持可规模化家具项目。",
-    "supplyText": "团队为北美、欧洲和拉美买家协调规格、工厂分配、验货、出口文件和装柜。",
+    "supplyText": "团队为北美、欧洲、拉美以及东南亚买家协调规格、工厂分配、验货、装柜和出口。",
     "contactIntro": "请发送产品需求、目标市场、数量和出运计划。团队将回复供应方案和报价下一步。",
     "formNote": "此静态表单可连接到您指定的邮件或表单服务。",
     "metricOwnedNumber": "4 个",
@@ -81,7 +81,10 @@
     "upholsteredTitle": "123",
     "upholsteredText": "Upholstered card text1  ",
     "trustText": "我们为客户提供家具产品定制，开发，打样，生产，交付服务，可以满足各国环保标准以及定制化付款方式",
-    "trustTitle": "为家具采购公司提供 \n高效率，高质量服务"
+    "trustTitle": "为家具采购公司提供 \n高效率，高质量服务",
+    "productsIntro": "浏览适合B2B整柜采购的样品项目",
+    "featuredProducts": "重点产品：",
+    "supplyTitle": "一个专业的跨国家具合作伙伴"
   },
   "_schema": {
     "schemaVersion": "1.0.0",
