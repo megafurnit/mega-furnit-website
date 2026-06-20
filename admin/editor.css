@@ -348,6 +348,14 @@ textarea {
   gap: 10px;
 }
 
+.product-image-manager h4 {
+  margin: 6px 0 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
 .gallery-row {
   display: grid;
   grid-template-columns: 76px 1fr;
@@ -359,8 +367,30 @@ textarea {
   background: #fff;
 }
 
+.gallery-row-main {
+  border-color: rgba(181, 137, 75, 0.45);
+  background: #fffaf1;
+}
+
+.gallery-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.gallery-fields strong {
+  font-size: 13px;
+}
+
 .gallery-row .media-thumb {
   width: 76px;
+}
+
+.gallery-row .image-upload-field {
+  padding: 8px;
+}
+
+.gallery-row .image-upload-field .media-thumb {
+  display: none;
 }
 
 .gallery-row .mini-actions {

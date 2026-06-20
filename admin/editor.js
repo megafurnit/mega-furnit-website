@@ -149,6 +149,8 @@ let previewInteractionMode = "edit";
 let expandedSectionKey = "";
 let expandedEditableId = "";
 let pendingUploads = new Map();
+let pendingUploadPreviews = new Map();
+let uploadCounter = 0;
 let aiDraft = null;
 
 const pageSelector = document.querySelector("#pageSelector");
@@ -273,7 +275,8 @@ function sendPreviewUpdate() {
     language: selectedLanguage,
     cmsContent: siteContent,
     productData,
-    pageBuilder
+    pageBuilder,
+    pendingImagePreviews: Object.fromEntries(pendingUploadPreviews)
   }, "*");
 }
 
@@ -598,7 +601,8 @@ function timestampSuffix() {
 function safeUploadPath(file) {
   const extension = (file.name.split(".").pop() || "").toLowerCase();
   const safeExtension = ALLOWED_IMAGE_EXTENSIONS.includes(extension) ? extension : "jpg";
-  return `${UPLOAD_FOLDER}/${slugifyFileBase(file.name)}-${timestampSuffix()}.${safeExtension}`;
+  uploadCounter += 1;
+  return `${UPLOAD_FOLDER}/${slugifyFileBase(file.name)}-${timestampSuffix()}-${uploadCounter}.${safeExtension}`;
 }
 
 function validateImageFile(file) {
@@ -613,23 +617,69 @@ function validateImageFile(file) {
   return "";
 }
 
+function previewSrcForPath(path) {
+  return pendingUploadPreviews.get(path) || path || "";
+}
+
+function revokePendingUploadPreviews() {
+  pendingUploadPreviews.forEach((previewUrl) => {
+    if (previewUrl && previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+  });
+  pendingUploadPreviews.clear();
+}
+
+function rememberPendingUploadPreview(imagePath, file) {
+  const previous = pendingUploadPreviews.get(imagePath);
+  if (previous && previous.startsWith("blob:")) URL.revokeObjectURL(previous);
+  pendingUploadPreviews.set(imagePath, URL.createObjectURL(file));
+}
+
+async function queueImageUploads(files) {
+  const selectedFiles = [...(files || [])];
+  if (!selectedFiles.length) return [];
+  const validFiles = [];
+  const errors = [];
+  selectedFiles.forEach((file) => {
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      errors.push(`${file.name}: ${validationError}`);
+    } else {
+      validFiles.push(file);
+    }
+  });
+  if (!validFiles.length) {
+    statusMessage.textContent = errors.join(" ");
+    return [];
+  }
+  const token = await currentUserToken();
+  if (!token) {
+    statusMessage.textContent = "Please log in with Netlify Identity before uploading images.";
+    if (window.netlifyIdentity?.open) window.netlifyIdentity.open("login");
+    return [];
+  }
+  const imagePaths = validFiles.map((file) => {
+    const imagePath = safeUploadPath(file);
+    pendingUploads.set(imagePath, file);
+    rememberPendingUploadPreview(imagePath, file);
+    return imagePath;
+  });
+  const uploadMessage = imagePaths.length === 1
+    ? `Image queued for upload: ${imagePaths[0]}.`
+    : `${imagePaths.length} images queued for upload.`;
+  const errorMessage = errors.length ? ` Skipped ${errors.length} invalid file(s): ${errors.join(" ")}` : "";
+  statusMessage.textContent = `${uploadMessage} Click Save to commit to GitHub.${errorMessage}`;
+  sendPreviewUpdate();
+  return imagePaths;
+}
+
 async function queueImageUpload(file, onPath) {
   const validationError = validateImageFile(file);
   if (validationError) {
     statusMessage.textContent = validationError;
     return;
   }
-  const token = await currentUserToken();
-  if (!token) {
-    statusMessage.textContent = "Please log in with Netlify Identity before uploading images.";
-    if (window.netlifyIdentity?.open) window.netlifyIdentity.open("login");
-    return;
-  }
-  const imagePath = safeUploadPath(file);
-  pendingUploads.set(imagePath, file);
-  onPath(imagePath);
-  statusMessage.textContent = `Image queued for upload: ${imagePath}. Click Save to commit it to GitHub.`;
-  sendPreviewUpdate();
+  const [imagePath] = await queueImageUploads([file]);
+  if (imagePath) onPath(imagePath);
 }
 
 function imageUploadControl(label, onPath, currentPath = "") {
@@ -658,11 +708,36 @@ function imageUploadControl(label, onPath, currentPath = "") {
   if (currentPath) {
     const previewImage = document.createElement("img");
     previewImage.className = "media-thumb";
-    previewImage.src = currentPath;
+    previewImage.src = previewSrcForPath(currentPath);
     previewImage.alt = "";
     wrapper.append(labelElement, previewImage, input, help);
     return wrapper;
   }
+  wrapper.append(labelElement, input, help);
+  return wrapper;
+}
+
+function batchImageUploadControl(label, onPaths) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "field image-upload-field";
+  const labelElement = document.createElement("label");
+  labelElement.textContent = label;
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ALLOWED_IMAGE_TYPES.join(",");
+  input.multiple = true;
+  input.addEventListener("change", async () => {
+    const imagePaths = await queueImageUploads(input.files);
+    if (!imagePaths.length) return;
+    onPaths(imagePaths);
+    renderContentFields();
+    renderSectionsEditor();
+    renderSelectedElementEditor();
+    sendPreviewUpdate();
+  });
+  const help = document.createElement("p");
+  help.className = "help-text";
+  help.textContent = "Select multiple JPG, PNG, WebP, or GIF images. Valid images preview immediately and upload when you click Save.";
   wrapper.append(labelElement, input, help);
   return wrapper;
 }
@@ -754,6 +829,7 @@ function selectedElementControlsForType(type) {
   const controls = document.createElement("div");
   const add = (node) => controls.append(node);
   const normalized = type === "paragraph" ? "text" : type;
+  const selectedProduct = selectedElement?.source === "products" ? productById(selectedElement.productId) : null;
 
   if (normalized === "design-layer") {
     const layer = currentSelectedLayer();
@@ -825,6 +901,19 @@ function selectedElementControlsForType(type) {
     });
     add(row);
     return controls;
+  }
+
+  if (selectedProduct && ["image", "product-card", "card"].includes(normalized)) {
+    add(renderProductImageManager(selectedProduct));
+    if (normalized === "product-card" || normalized === "card") {
+      add(selectedStyleColor("Card background color", "backgroundColor", "#FFFFFF"));
+      add(selectedStyleColor("Border color", "borderColor", "#8C867D"));
+      add(selectedStyleInput("Border radius", "borderRadius"));
+      add(selectedStyleInput("Padding", "padding"));
+      add(selectedStyleInput("Shadow", "boxShadow"));
+      add(selectedStyleColor("Text color", "color", "#151515"));
+      return controls;
+    }
   }
 
   if (["heading", "text"].includes(normalized)) {
@@ -1863,12 +1952,47 @@ function setProductGallery(product, gallery) {
   product.gallery = gallery.filter(Boolean);
 }
 
-function renderProductGalleryEditor(product) {
+function renderProductImageManager(product) {
   const wrapper = document.createElement("div");
-  wrapper.className = "nested-editor product-gallery-editor";
-  wrapper.append(Object.assign(document.createElement("h3"), { textContent: "Product gallery" }));
+  wrapper.className = "nested-editor product-gallery-editor product-image-manager";
+  wrapper.append(Object.assign(document.createElement("h3"), { textContent: "Product image manager" }));
+
+  const main = document.createElement("div");
+  main.className = "gallery-row gallery-row-main";
+  const mainThumb = document.createElement("img");
+  mainThumb.className = "media-thumb";
+  mainThumb.src = previewSrcForPath(product.image || "assets/images/placeholder-furniture.svg");
+  mainThumb.alt = "";
+  const mainFields = document.createElement("div");
+  mainFields.className = "gallery-fields";
+  mainFields.append(Object.assign(document.createElement("strong"), { textContent: "Main image / cover" }));
+  const mainInput = document.createElement("input");
+  mainInput.value = product.image || "";
+  mainInput.placeholder = "assets/images/uploads/product-main.webp";
+  mainInput.addEventListener("input", () => {
+    product.image = mainInput.value;
+    sendPreviewUpdate();
+  });
+  const mainActions = document.createElement("div");
+  mainActions.className = "mini-actions";
+  const clearMain = document.createElement("button");
+  clearMain.type = "button";
+  clearMain.className = "secondary-button tiny-button";
+  clearMain.textContent = "Clear main image";
+  clearMain.addEventListener("click", () => {
+    product.image = "";
+    renderContentFields();
+    sendPreviewUpdate();
+  });
+  mainActions.append(clearMain);
+  mainFields.append(mainInput, imageUploadControl("Upload / replace main image", (imagePath) => {
+    product.image = imagePath;
+  }, product.image), mainActions);
+  main.append(mainThumb, mainFields);
+  wrapper.append(main);
 
   const gallery = productGallery(product);
+  wrapper.append(Object.assign(document.createElement("h4"), { textContent: "Gallery" }));
   if (!gallery.length) {
     const note = document.createElement("p");
     note.className = "help-text";
@@ -1881,10 +2005,15 @@ function renderProductGalleryEditor(product) {
     item.className = "gallery-row";
     const thumb = document.createElement("img");
     thumb.className = "media-thumb";
-    thumb.src = imagePath;
+    thumb.src = previewSrcForPath(imagePath);
     thumb.alt = "";
+    const fields = document.createElement("div");
+    fields.className = "gallery-fields";
+    const label = document.createElement("strong");
+    label.textContent = product.image === imagePath ? `Gallery image ${index + 1} / cover` : `Gallery image ${index + 1}`;
     const input = document.createElement("input");
     input.value = imagePath;
+    input.placeholder = "assets/images/uploads/product-detail.webp";
     input.addEventListener("input", () => {
       gallery[index] = input.value;
       setProductGallery(product, gallery);
@@ -1893,7 +2022,7 @@ function renderProductGalleryEditor(product) {
     const actions = document.createElement("div");
     actions.className = "mini-actions";
     [
-      ["Set cover", () => { product.image = imagePath; }],
+      ["Set cover", () => { product.image = gallery[index]; }],
       ["Up", () => {
         if (index <= 0) return;
         [gallery[index - 1], gallery[index]] = [gallery[index], gallery[index - 1]];
@@ -1920,16 +2049,29 @@ function renderProductGalleryEditor(product) {
       });
       actions.append(button);
     });
-    item.append(thumb, input, actions);
+    fields.append(label, input, imageUploadControl("Replace this gallery image", (nextPath) => {
+      gallery[index] = nextPath;
+      setProductGallery(product, gallery);
+    }, imagePath), actions);
+    item.append(thumb, fields);
     wrapper.append(item);
   });
 
-  wrapper.append(imageUploadControl("Add gallery image", (imagePath) => {
+  wrapper.append(imageUploadControl("Add one gallery image", (imagePath) => {
     const nextGallery = productGallery(product);
     nextGallery.push(imagePath);
     setProductGallery(product, nextGallery);
   }));
+  wrapper.append(batchImageUploadControl("Batch upload gallery images", (imagePaths) => {
+    const nextGallery = productGallery(product);
+    nextGallery.push(...imagePaths);
+    setProductGallery(product, nextGallery);
+  }));
   return wrapper;
+}
+
+function renderProductGalleryEditor(product) {
+  return renderProductImageManager(product);
 }
 
 function newProduct() {
@@ -1993,11 +2135,7 @@ function renderProductEditor() {
   contentEditor.append(productInput("Description", localized(product.description), (value) => setLocalized(product, "description", value), "textarea"));
   contentEditor.append(productInput("Dimensions", product.dimensions, (value) => { product.dimensions = value; }));
   contentEditor.append(productInput("Materials", localized(product.materials), (value) => setLocalized(product, "materials", value), "textarea"));
-  contentEditor.append(productInput("Image path", product.image, (value) => { product.image = value; }));
-  contentEditor.append(imageUploadControl("Upload / replace main image", (imagePath) => {
-    product.image = imagePath;
-  }, product.image));
-  contentEditor.append(renderProductGalleryEditor(product));
+  contentEditor.append(renderProductImageManager(product));
 
   const removeButton = document.createElement("button");
   removeButton.className = "danger-button";
@@ -2190,6 +2328,8 @@ async function saveChanges() {
     await saveGitGatewayFile("data/products.json", productData, token);
     await saveGitGatewayFile("data/page-builder.json", pageBuilder, token);
     pendingUploads.clear();
+    revokePendingUploadPreviews();
+    sendPreviewUpdate();
     statusMessage.textContent = "Saved to GitHub successfully. Netlify will redeploy from the commit.";
   } catch (error) {
     console.warn(error);

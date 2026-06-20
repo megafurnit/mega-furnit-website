@@ -27,6 +27,7 @@ let editorPreviewMode = false;
 let previewInteractionMode = "edit";
 let selectedEditableId = "";
 let inspectorEventsBound = false;
+let pendingImagePreviews = {};
 
 function normalizeLanguage(language) {
   return LANGUAGES.includes(language) ? language : DEFAULT_LANGUAGE;
@@ -59,6 +60,11 @@ function escapeAttr(value) {
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+function imageSrc(path) {
+  const imagePath = path || "";
+  return editorPreviewMode && pendingImagePreviews[imagePath] ? pendingImagePreviews[imagePath] : imagePath;
 }
 
 function editableAttrs(type, id, path, extra = {}) {
@@ -399,7 +405,7 @@ function applyThemeSettings() {
 }
 
 function cssValue(property, value) {
-  if (property === "backgroundImage" && value) return `url("${value}")`;
+  if (property === "backgroundImage" && value) return `url("${imageSrc(value)}")`;
   return value;
 }
 
@@ -410,7 +416,7 @@ function applyHeroBackgroundStyles(element, styles) {
   const opacity = Number.parseFloat(styles.overlayOpacity || HERO_BACKGROUND_DEFAULTS.overlayOpacity);
   const leftOpacity = Number.isFinite(opacity) ? Math.max(0, Math.min(1, opacity)) : Number(HERO_BACKGROUND_DEFAULTS.overlayOpacity);
   const rightOpacity = Math.max(0, Math.min(1, leftOpacity * HERO_BACKGROUND_DEFAULTS.overlayRightRatio));
-  element.style.backgroundImage = `linear-gradient(90deg, color-mix(in srgb, ${overlayColor} ${Math.round(leftOpacity * 100)}%, transparent), color-mix(in srgb, ${overlayColor} ${Math.round(rightOpacity * 100)}%, transparent)), url("${image}")`;
+  element.style.backgroundImage = `linear-gradient(90deg, color-mix(in srgb, ${overlayColor} ${Math.round(leftOpacity * 100)}%, transparent), color-mix(in srgb, ${overlayColor} ${Math.round(rightOpacity * 100)}%, transparent)), url("${imageSrc(image)}")`;
   element.style.backgroundPosition = "center";
   element.style.backgroundSize = "cover";
 }
@@ -626,12 +632,12 @@ function renderDesignLayer(layer, collectionId, pageKey, sectionIndex = "") {
   }
   if (layer.type === "Image") {
     const image = layer.image || "assets/images/placeholder-furniture.svg";
-    const img = `<img src="${escapeAttr(image)}" alt="${escapeAttr(layerValue(layer, "alt") || layer.label || "")}">`;
+    const img = `<img src="${escapeAttr(imageSrc(image))}" alt="${escapeAttr(layerValue(layer, "alt") || layer.label || "")}">`;
     const content = layer.styles?.href ? `<a href="${escapeAttr(layer.styles.href)}">${img}</a>` : img;
     return `<div class="design-layer design-layer-image" style="${style}" aria-label="${label}" ${attrs}>${content}</div>`;
   }
   if (layer.type === "Video") {
-    return `<div class="design-layer design-layer-video" style="${style}" aria-label="${label}" ${attrs}><video ${layer.controls === false ? "" : "controls"} ${layer.autoplay ? "autoplay muted" : ""} poster="${escapeAttr(layer.posterImage || "")}" src="${escapeAttr(layer.videoPath || "")}"></video></div>`;
+    return `<div class="design-layer design-layer-video" style="${style}" aria-label="${label}" ${attrs}><video ${layer.controls === false ? "" : "controls"} ${layer.autoplay ? "autoplay muted" : ""} poster="${escapeAttr(imageSrc(layer.posterImage || ""))}" src="${escapeAttr(layer.videoPath || "")}"></video></div>`;
   }
   const className = layer.type === "Divider / Spacer" ? "design-layer-spacer" : "design-layer-rectangle";
   return `<div class="design-layer ${className}" style="${style}" aria-label="${label}" ${attrs}></div>`;
@@ -666,7 +672,7 @@ function renderFeatureCards(section, index, pageKey) {
       "data-editable-page": pageKey,
       "data-editable-section-index": index
     })}>
-      ${card.image ? `<img src="${card.image}" alt="${sectionText(card, "title")}" ${editableAttrs("image", `section-${section.id || index}-card-${cardIndex}-image`, `pageBuilder.pages.${pageKey}.${index}.cards.${cardIndex}.image`, {
+      ${card.image ? `<img src="${imageSrc(card.image)}" alt="${sectionText(card, "title")}" ${editableAttrs("image", `section-${section.id || index}-card-${cardIndex}-image`, `pageBuilder.pages.${pageKey}.${index}.cards.${cardIndex}.image`, {
         "data-editable-source": "pageBuilder",
         "data-editable-page": pageKey,
         "data-editable-section-index": index,
@@ -692,7 +698,7 @@ function renderGallery(section, index, pageKey) {
   const images = section.images || [];
   return `<div class="section-builder-gallery">${images.map((item, imageIndex) => `
     <figure>
-      <img src="${item.image || "assets/images/placeholder-furniture.svg"}" alt="${sectionText(item, "caption")}" ${editableAttrs("image", `section-${section.id || index}-gallery-${imageIndex}-image`, `pageBuilder.pages.${pageKey}.${index}.images.${imageIndex}.image`, {
+      <img src="${imageSrc(item.image || "assets/images/placeholder-furniture.svg")}" alt="${sectionText(item, "caption")}" ${editableAttrs("image", `section-${section.id || index}-gallery-${imageIndex}-image`, `pageBuilder.pages.${pageKey}.${index}.images.${imageIndex}.image`, {
         "data-editable-source": "pageBuilder",
         "data-editable-page": pageKey,
         "data-editable-section-index": index,
@@ -731,7 +737,7 @@ function renderFaq(section, index, pageKey) {
 function renderLogoStrip(section) {
   const logos = section.logos || [];
   return `<div class="section-builder-logo-strip">${logos.map((logo) => `
-    ${logo.image ? `<img src="${logo.image}" alt="${sectionText(logo, "alt")}">` : `<span>${sectionText(logo, "alt")}</span>`}
+    ${logo.image ? `<img src="${imageSrc(logo.image)}" alt="${sectionText(logo, "alt")}">` : `<span>${sectionText(logo, "alt")}</span>`}
   `).join("")}</div>`;
 }
 
@@ -789,7 +795,7 @@ function renderSection(section, index, pageKey) {
   });
 
   if (section.type === "Hero Banner") {
-    const heroStyle = `${style};${image ? `background-image:linear-gradient(90deg,rgba(21,21,21,.68),rgba(21,21,21,.22)),url('${image}');` : ""}${section.height ? `min-height:${section.height};` : ""}`;
+    const heroStyle = `${style};${image ? `background-image:linear-gradient(90deg,rgba(21,21,21,.68),rgba(21,21,21,.22)),url('${imageSrc(image)}');` : ""}${section.height ? `min-height:${section.height};` : ""}`;
     return withLayers(`<section class="section-builder-section section-builder-hero${alignClass}" style="${heroStyle}" ${sectionAttrs}>
       <div class="container"><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${sectionButton(section, index, pageKey)}</div>
     </section>`);
@@ -798,7 +804,7 @@ function renderSection(section, index, pageKey) {
   if (section.type === "Image Banner") {
     return withLayers(`<section class="section-builder-section" style="${style}" ${sectionAttrs}>
       <div class="container section-builder-split ${section.layout === "image-right" ? "image-right" : ""}">
-        <div>${image ? `<img src="${image}" alt="${title}" ${imageAttrs}>` : ""}</div>
+        <div>${image ? `<img src="${imageSrc(image)}" alt="${title}" ${imageAttrs}>` : ""}</div>
         <div><h2 ${headingAttrs}>${title}</h2><p ${bodyAttrs}>${body}</p>${sectionButton(section, index, pageKey)}</div>
       </div>
     </section>`);
@@ -927,7 +933,7 @@ function productCard(product) {
   return `
     <article class="product-card" ${productEditable(product, "product-card", "root")}>
       <a href="product-detail.html?id=${encodeURIComponent(product.id)}" aria-label="${localized(product.name)}">
-        <img src="${image}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
+        <img src="${imageSrc(image)}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
       </a>
       <div class="product-body">
         <div>
@@ -1027,12 +1033,12 @@ function renderProductDetail() {
   const factoryTypeLabel = localized(product.factoryTypeLabel) || t(product.factoryType);
   const galleryImages = productGalleryImages(product);
   const galleryHtml = galleryImages.length > 1 ? `<div class="detail-gallery" aria-label="Product gallery">
-    ${galleryImages.map((imagePath, index) => `<button type="button" class="${index === 0 ? "is-active" : ""}" data-gallery-image="${escapeAttr(imagePath)}"><img src="${escapeAttr(imagePath)}" alt="${escapeAttr(localized(product.name))}"></button>`).join("")}
+    ${galleryImages.map((imagePath, index) => `<button type="button" class="${index === 0 ? "is-active" : ""}" data-gallery-image="${escapeAttr(imageSrc(imagePath))}" data-gallery-path="${escapeAttr(imagePath)}"><img src="${escapeAttr(imageSrc(imagePath))}" alt="${escapeAttr(localized(product.name))}"></button>`).join("")}
   </div>` : "";
 
   detail.innerHTML = `
     <div>
-      <img class="detail-image" data-detail-main-image src="${productMainImage(product)}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
+      <img class="detail-image" data-detail-main-image src="${imageSrc(productMainImage(product))}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
       ${galleryHtml}
     </div>
     <aside class="detail-panel">
@@ -1112,6 +1118,9 @@ function applyPreviewState(previewState) {
   if (previewState.pageBuilder) {
     pageBuilder = normalizePageBuilder(previewState.pageBuilder);
   }
+  pendingImagePreviews = previewState.pendingImagePreviews && typeof previewState.pendingImagePreviews === "object"
+    ? previewState.pendingImagePreviews
+    : {};
   applyTranslations();
   applyCmsContent();
   applyStaticCmsContent();
