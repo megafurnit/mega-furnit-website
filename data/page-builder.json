@@ -3,7 +3,7 @@
     "primaryBackground": "#F3EBDD",
     "secondaryBackground": "#EFE6D8",
     "textColor": "#151515",
-    "headingColor": "#1E1E1E",
+    "headingColor": "#FFFFFF",
     "buttonBackground": "#151515",
     "buttonTextColor": "#FFFFFF",
     "accentColor": "#B08A5A",
@@ -30,7 +30,9 @@
     "homeHero": [],
     "home:home-native-3": [],
     "home:home-native-1": [],
-    "home:home-native-2": []
+    "home:home-native-2": [],
+    "home:home-native-4": [],
+    "home:section-1781993757271": []
   },
   "nativeSections": {
     "home": {
@@ -172,24 +174,50 @@
     "site-languageZhLabel": {},
     "i18n-navHome": {},
     "i18n-heroEyebrow": {
-      "fontFamily": "Times New Roman"
+      "fontFamily": "Times New Roman",
+      "color": "#FFFFFF"
     },
-    "site-heroTitle": {},
-    "site-heroText": {},
-    "section-native-home-native-0": {},
+    "site-heroTitle": {
+      "color": "#EFE6D8"
+    },
+    "site-heroText": {
+      "color": "#FFFFFF"
+    },
+    "section-native-home-native-0": {
+      "backgroundColor": "#12201B",
+      "backgroundImage": ""
+    },
     "home--metric-0": {},
-    "site-metricOwnedNumber": {},
-    "i18n-ownedFactories": {},
-    "section-native-home-native-2": {},
+    "site-metricOwnedNumber": {
+      "color": "#EFE6D8"
+    },
+    "i18n-ownedFactories": {
+      "color": "#FFFFFF"
+    },
+    "section-native-home-native-2": {
+      "backgroundColor": "#8C867D"
+    },
     "home--metric-1": {},
-    "site-metricPartnerNumber": {},
-    "i18n-partnerFactories": {},
-    "i18n-regionalPrograms": {},
-    "site-metricRegionalNumber": {},
-    "i18n-trustTitle": {},
+    "site-metricPartnerNumber": {
+      "color": "#EFE6D8"
+    },
+    "i18n-partnerFactories": {
+      "color": "#FFFFFF"
+    },
+    "i18n-regionalPrograms": {
+      "color": "#FFFFFF"
+    },
+    "site-metricRegionalNumber": {
+      "color": "#EFE6D8"
+    },
+    "i18n-trustTitle": {
+      "color": "#151515"
+    },
     "i18n-capabilityOne": {},
     "i18n-capabilityOneText": {},
-    "i18n-trustText": {},
+    "i18n-trustText": {
+      "color": "#1E1E1E"
+    },
     "i18n-upholsteredTitle": {},
     "i18n-upholsteredText": {
       "color": "#151515"
@@ -197,6 +225,49 @@
     "i18n-panelTitle": {},
     "site-homeCapabilityOneNumber": {},
     "home--capability-item-0": {},
-    "i18n-panelText": {}
+    "i18n-panelText": {},
+    "i18n-productsIntro": {},
+    "i18n-featuredProducts": {
+      "color": "#151515"
+    },
+    "product-MF-SF001-moq": {},
+    "product-MF-SF001-root": {},
+    "section-native-home-native-4": {
+      "backgroundColor": "#8C867D",
+      "backgroundImage": "",
+      "overlayColor": "#12201B",
+      "color": "#151515",
+      "borderColor": "#B08A5A"
+    },
+    "i18n-supplyTitle": {
+      "color": "#151515"
+    },
+    "site-supplyText": {
+      "color": "#151515"
+    },
+    "site-footerBrandName": {},
+    "i18n-footerText": {},
+    "i18n-regionText": {},
+    "i18n-downloadCatalog": {},
+    "i18n-whatsapp": {},
+    "site-languageEnLabel": {
+      "hoverBackgroundColor": "#1E1E1E"
+    },
+    "site-languageEsLabel": {},
+    "i18n-requestQuote": {},
+    "site-viewProducts": {
+      "backgroundColor": "#151515"
+    },
+    "section-section-1781993757271": {},
+    "section-section-1781993757271-heading": {},
+    "section-native-home-native-1": {
+      "backgroundColor": "#151515"
+    },
+    "section-native-home-native-3": {
+      "backgroundColor": "#F3EBDD"
+    },
+    "home-background-0": {
+      "color": "#EFE6D8"
+    }
   }
 }
