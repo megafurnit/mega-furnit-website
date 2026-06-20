@@ -28,5 +28,127 @@
   },
   "layers": {
     "homeHero": []
+  },
+  "nativeSections": {
+    "home": {
+      "home-native-0": {
+        "label": "Hero Banner",
+        "type": "Original Section"
+      },
+      "home-native-1": {
+        "label": "Factory Metrics",
+        "type": "Original Section"
+      },
+      "home-native-2": {
+        "label": "Manufacturing Capability Intro",
+        "type": "Original Section"
+      },
+      "home-native-3": {
+        "label": "Featured Product Catalog",
+        "type": "Original Section"
+      },
+      "home-native-4": {
+        "label": "Inquiry CTA Banner",
+        "type": "Original Section"
+      }
+    },
+    "products": {
+      "products-native-0": {
+        "label": "Products Page Hero",
+        "type": "Original Section"
+      },
+      "products-native-1": {
+        "label": "Catalog Filters and Product Grid",
+        "type": "Original Section"
+      }
+    },
+    "product-detail": {
+      "product-detail-native-0": {
+        "label": "Product Detail Hero",
+        "type": "Original Section"
+      },
+      "product-detail-native-1": {
+        "label": "Product Detail Content",
+        "type": "Original Section"
+      }
+    },
+    "capabilities": {
+      "capabilities-native-0": {
+        "label": "Capabilities Page Hero",
+        "type": "Original Section"
+      },
+      "capabilities-native-1": {
+        "label": "Factory Capabilities",
+        "type": "Original Section"
+      },
+      "capabilities-native-2": {
+        "label": "Supply Chain Workflow",
+        "type": "Original Section"
+      }
+    },
+    "about": {
+      "about-native-0": {
+        "label": "About Page Hero",
+        "type": "Original Section"
+      },
+      "about-native-1": {
+        "label": "About Company Content",
+        "type": "Original Section"
+      }
+    },
+    "contact": {
+      "contact-native-0": {
+        "label": "Contact Page Hero",
+        "type": "Original Section"
+      },
+      "contact-native-1": {
+        "label": "Contact Form and Details",
+        "type": "Original Section"
+      }
+    },
+    "catalog": {
+      "catalog-native-0": {
+        "label": "Catalog Page Hero",
+        "type": "Original Section"
+      },
+      "catalog-native-1": {
+        "label": "Catalog Download Placeholder",
+        "type": "Original Section"
+      }
+    }
+  },
+  "sectionOrder": {
+    "home": [
+      "native:home-native-0",
+      "native:home-native-1",
+      "native:home-native-2",
+      "native:home-native-3",
+      "native:home-native-4"
+    ],
+    "products": [
+      "native:products-native-0",
+      "native:products-native-1"
+    ],
+    "product-detail": [
+      "native:product-detail-native-0",
+      "native:product-detail-native-1"
+    ],
+    "capabilities": [
+      "native:capabilities-native-0",
+      "native:capabilities-native-1",
+      "native:capabilities-native-2"
+    ],
+    "about": [
+      "native:about-native-0",
+      "native:about-native-1"
+    ],
+    "contact": [
+      "native:contact-native-0",
+      "native:contact-native-1"
+    ],
+    "catalog": [
+      "native:catalog-native-0",
+      "native:catalog-native-1"
+    ]
   }
 }

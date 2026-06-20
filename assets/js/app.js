@@ -1,6 +1,21 @@
 const LANGUAGES = ["en", "es", "zh"];
 const DEFAULT_LANGUAGE = "en";
 const WHATSAPP_NUMBER = "8613800000000";
+const HERO_BACKGROUND_DEFAULTS = {
+  image: "assets/images/placeholder-furniture.svg",
+  overlayColor: "rgb(18, 31, 27)",
+  overlayOpacity: "0.86",
+  overlayRightRatio: 0.44
+};
+const NATIVE_SECTIONS = {
+  home: ["home-native-0", "home-native-1", "home-native-2", "home-native-3", "home-native-4"],
+  products: ["products-native-0", "products-native-1"],
+  "product-detail": ["product-detail-native-0", "product-detail-native-1"],
+  capabilities: ["capabilities-native-0", "capabilities-native-1", "capabilities-native-2"],
+  about: ["about-native-0", "about-native-1"],
+  contact: ["contact-native-0", "contact-native-1"],
+  catalog: ["catalog-native-0", "catalog-native-1"]
+};
 
 let translations = {};
 let cmsContent = {};
@@ -123,7 +138,9 @@ function normalizePageBuilder(builderData) {
     theme: builderData.theme || {},
     pages: builderData.pages || {},
     elementStyles: builderData.elementStyles || {},
-    layers: builderData.layers || {}
+    layers: builderData.layers || {},
+    nativeSections: builderData.nativeSections || {},
+    sectionOrder: builderData.sectionOrder || {}
   };
 }
 
@@ -232,6 +249,59 @@ function applySharedContentEditables() {
   });
 }
 
+function nativeSectionKey(id) {
+  return `native:${id}`;
+}
+
+function builderSectionKey(section) {
+  return `builder:${section.id}`;
+}
+
+function ensureSectionOrder(pageKey) {
+  pageBuilder.nativeSections = pageBuilder.nativeSections || {};
+  pageBuilder.sectionOrder = pageBuilder.sectionOrder || {};
+  pageBuilder.pages = pageBuilder.pages || {};
+  pageBuilder.nativeSections[pageKey] = pageBuilder.nativeSections[pageKey] || {};
+  pageBuilder.pages[pageKey] = pageBuilder.pages[pageKey] || [];
+
+  const nativeKeys = (NATIVE_SECTIONS[pageKey] || [])
+    .filter((id) => !pageBuilder.nativeSections[pageKey][id]?.deleted)
+    .map(nativeSectionKey);
+  const builderKeys = pageBuilder.pages[pageKey].map(builderSectionKey);
+  const validKeys = new Set([...nativeKeys, ...builderKeys]);
+  const currentOrder = Array.isArray(pageBuilder.sectionOrder[pageKey]) ? pageBuilder.sectionOrder[pageKey] : [];
+  const nextOrder = currentOrder.filter((key) => validKeys.has(key));
+  [...nativeKeys, ...builderKeys].forEach((key) => {
+    if (!nextOrder.includes(key)) nextOrder.push(key);
+  });
+  pageBuilder.sectionOrder[pageKey] = nextOrder;
+  return nextOrder;
+}
+
+function assignNativeSectionMetadata(pageKey) {
+  const main = document.querySelector("main");
+  if (!main) return;
+  let nativeIndex = 0;
+  [...main.children].forEach((element) => {
+    if (element.dataset.builderSection === "true") return;
+    if (!element.dataset.nativeSectionId) {
+      element.dataset.nativeSectionId = `${pageKey}-native-${nativeIndex}`;
+    }
+    const sectionKey = nativeSectionKey(element.dataset.nativeSectionId);
+    element.dataset.sectionKey = sectionKey;
+    element.dataset.editableSectionKey = sectionKey;
+    nativeIndex += 1;
+  });
+}
+
+function applyNativeSectionVisibility(pageKey) {
+  const nativeState = pageBuilder.nativeSections?.[pageKey] || {};
+  document.querySelectorAll("main > [data-native-section-id]").forEach((element) => {
+    const state = nativeState[element.dataset.nativeSectionId] || {};
+    element.hidden = Boolean(state.hidden || state.deleted);
+  });
+}
+
 function markStructuralEditables() {
   const page = currentPageKey();
   [
@@ -245,7 +315,11 @@ function markStructuralEditables() {
     ["form[name='inquiry']", "background"]
   ].forEach(([selector, type]) => {
     document.querySelectorAll(selector).forEach((element, index) => {
-      assignEditable(element, type, `${page}-${type}-${index}`, "", { editablePage: page });
+      const sectionKey = element.dataset.sectionKey || element.closest("[data-section-key]")?.dataset.sectionKey || "";
+      assignEditable(element, type, `${page}-${type}-${index}`, "", {
+        editablePage: page,
+        editableSectionKey: sectionKey
+      });
     });
   });
 
@@ -295,11 +369,11 @@ function cssValue(property, value) {
 
 function applyHeroBackgroundStyles(element, styles) {
   if (!element.classList.contains("hero")) return;
-  const image = styles.backgroundImage || "assets/images/placeholder-furniture.svg";
-  const overlayColor = styles.overlayColor || "rgb(18, 31, 27)";
-  const opacity = Number.parseFloat(styles.overlayOpacity || "0.86");
-  const leftOpacity = Number.isFinite(opacity) ? Math.max(0, Math.min(1, opacity)) : 0.86;
-  const rightOpacity = Math.max(0, Math.min(1, leftOpacity * 0.44));
+  const image = styles.backgroundImage || HERO_BACKGROUND_DEFAULTS.image;
+  const overlayColor = styles.overlayColor || HERO_BACKGROUND_DEFAULTS.overlayColor;
+  const opacity = Number.parseFloat(styles.overlayOpacity || HERO_BACKGROUND_DEFAULTS.overlayOpacity);
+  const leftOpacity = Number.isFinite(opacity) ? Math.max(0, Math.min(1, opacity)) : Number(HERO_BACKGROUND_DEFAULTS.overlayOpacity);
+  const rightOpacity = Math.max(0, Math.min(1, leftOpacity * HERO_BACKGROUND_DEFAULTS.overlayRightRatio));
   element.style.backgroundImage = `linear-gradient(90deg, color-mix(in srgb, ${overlayColor} ${Math.round(leftOpacity * 100)}%, transparent), color-mix(in srgb, ${overlayColor} ${Math.round(rightOpacity * 100)}%, transparent)), url("${image}")`;
   element.style.backgroundPosition = "center";
   element.style.backgroundSize = "cover";
@@ -347,6 +421,7 @@ function sendSelectedElement(element) {
       field: element.dataset.editableField || "",
       page: element.dataset.editablePage || currentPageKey(),
       sectionIndex: element.dataset.editableSectionIndex,
+      sectionKey: element.dataset.editableSectionKey || element.dataset.sectionKey || "",
       productId: element.dataset.editableProductId || "",
       layerId: element.dataset.editableLayerId || "",
       layerCollection: element.dataset.editableLayerCollection || "",
@@ -413,6 +488,7 @@ function sectionButton(section, index, pageKey) {
     "data-editable-source": "pageBuilder",
     "data-editable-page": pageKey,
     "data-editable-section-index": index,
+    "data-editable-section-key": builderSectionKey(section),
     "data-editable-field": "buttonText"
   });
   return text ? `<div class="section-builder-actions"><a class="btn btn-primary" href="${link}" ${attrs}>${text}</a></div>` : "";
@@ -476,7 +552,7 @@ function renderDesignLayer(layer, collectionId, pageKey, sectionIndex = "") {
 }
 
 function renderDesignLayerContainer(layers, collectionId, pageKey, sectionIndex = "") {
-  const visibleLayers = layers || [];
+  const visibleLayers = (layers || []).filter((layer) => layer && !layer.hidden);
   if (!visibleLayers.length) return "";
   return `<div class="design-layer-container" aria-hidden="false">${visibleLayers.map((layer) => renderDesignLayer(layer, collectionId, pageKey, sectionIndex)).join("")}</div>`;
 }
@@ -484,8 +560,8 @@ function renderDesignLayerContainer(layers, collectionId, pageKey, sectionIndex 
 function renderHomeHeroLayers() {
   const hero = document.querySelector(".hero");
   if (!hero) return;
-  hero.querySelector("[data-design-layer-container='homeHero']")?.remove();
-  const layers = pageBuilder.layers?.homeHero || [];
+  hero.querySelectorAll("[data-design-layer-container='homeHero']").forEach((container) => container.remove());
+  const layers = (pageBuilder.layers?.homeHero || []).filter((layer) => layer && !layer.hidden);
   if (!layers.length) {
     hero.classList.remove("has-design-layers");
     return;
@@ -596,24 +672,30 @@ function renderSection(section, index, pageKey) {
   const sectionAttrs = editableAttrs(section.type === "Hero Banner" ? "banner" : "section", `section-${sectionId}`, `pageBuilder.pages.${pageKey}.${index}`, {
     "data-editable-source": "pageBuilder",
     "data-editable-page": pageKey,
-    "data-editable-section-index": index
+    "data-editable-section-index": index,
+    "data-editable-section-key": builderSectionKey(section),
+    "data-builder-section": "true",
+    "data-section-key": builderSectionKey(section)
   });
   const headingAttrs = editableAttrs("heading", `section-${sectionId}-heading`, `pageBuilder.pages.${pageKey}.${index}.title`, {
     "data-editable-source": "pageBuilder",
     "data-editable-page": pageKey,
     "data-editable-section-index": index,
+    "data-editable-section-key": builderSectionKey(section),
     "data-editable-field": section.heading ? "heading" : "title"
   });
   const bodyAttrs = editableAttrs("text", `section-${sectionId}-body`, `pageBuilder.pages.${pageKey}.${index}.body`, {
     "data-editable-source": "pageBuilder",
     "data-editable-page": pageKey,
     "data-editable-section-index": index,
+    "data-editable-section-key": builderSectionKey(section),
     "data-editable-field": section.subtitle ? "subtitle" : "body"
   });
   const imageAttrs = editableAttrs("image", `section-${sectionId}-image`, `pageBuilder.pages.${pageKey}.${index}.image`, {
     "data-editable-source": "pageBuilder",
     "data-editable-page": pageKey,
     "data-editable-section-index": index,
+    "data-editable-section-key": builderSectionKey(section),
     "data-editable-field": section.backgroundImage ? "backgroundImage" : "image"
   });
 
@@ -666,13 +748,42 @@ function renderSection(section, index, pageKey) {
 
 function renderPageSections() {
   document.querySelector("[data-page-sections]")?.remove();
+  document.querySelectorAll("[data-builder-section='true']").forEach((section) => section.remove());
   const pageKey = currentPageKey();
   const sections = pageBuilder.pages?.[pageKey] || [];
-  if (!sections.length) return;
-  const wrapper = document.createElement("div");
-  wrapper.dataset.pageSections = pageKey;
-  wrapper.innerHTML = sections.map((section, index) => renderSection(section, index, pageKey)).join("");
-  document.querySelector("main")?.append(wrapper);
+  const main = document.querySelector("main");
+  if (!main || !sections.length) return;
+  const fragment = document.createDocumentFragment();
+  sections.forEach((section, index) => {
+    const html = renderSection(section, index, pageKey);
+    if (!html) return;
+    const template = document.createElement("template");
+    template.innerHTML = html.trim();
+    [...template.content.children].forEach((element) => {
+      element.dataset.builderSection = "true";
+      element.dataset.sectionKey = builderSectionKey(section);
+      element.dataset.editableSectionKey = builderSectionKey(section);
+      fragment.append(element);
+    });
+  });
+  main.append(fragment);
+}
+
+function applySectionOrder() {
+  const pageKey = currentPageKey();
+  const main = document.querySelector("main");
+  if (!main) return;
+  assignNativeSectionMetadata(pageKey);
+  applyNativeSectionVisibility(pageKey);
+  const order = ensureSectionOrder(pageKey);
+  const nodesByKey = new Map();
+  [...main.children].forEach((element) => {
+    if (element.dataset.sectionKey) nodesByKey.set(element.dataset.sectionKey, element);
+  });
+  order.forEach((key) => {
+    const element = nodesByKey.get(key);
+    if (element) main.append(element);
+  });
 }
 
 function setupLanguageSwitcher() {
@@ -857,6 +968,7 @@ function renderCurrentPage() {
   renderProductList();
   renderProductDetail();
   renderPageSections();
+  applySectionOrder();
   renderHomeHeroLayers();
   setupContactSubject();
   applyStaticCmsContent();

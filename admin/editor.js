@@ -92,6 +92,45 @@ const SWATCHES = ["#F3EBDD", "#EFE6D8", "#151515", "#1E1E1E", "#6B4423", "#7A523
 const SECTION_TYPES = ["Hero Banner", "Text Block", "Image Banner", "Image Gallery", "Video Block", "CTA Banner", "Feature Cards", "Product Grid", "FAQ Section", "Logo Strip", "Custom HTML/Text Block"];
 const SECTION_PAGES = ["home", "products", "product-detail", "capabilities", "about", "contact", "catalog"];
 const LAYER_TYPES = ["Text Box", "Button", "Rectangle", "Image", "Video", "Divider / Spacer"];
+const HERO_BACKGROUND_DEFAULTS = {
+  image: "assets/images/placeholder-furniture.svg",
+  overlayColor: "#12201B",
+  overlayOpacity: "0.86"
+};
+const NATIVE_SECTIONS = {
+  home: [
+    { id: "home-native-0", label: "Hero Banner", type: "Original Section" },
+    { id: "home-native-1", label: "Factory Metrics", type: "Original Section" },
+    { id: "home-native-2", label: "Manufacturing Capability Intro", type: "Original Section" },
+    { id: "home-native-3", label: "Featured Product Catalog", type: "Original Section" },
+    { id: "home-native-4", label: "Inquiry CTA Banner", type: "Original Section" }
+  ],
+  products: [
+    { id: "products-native-0", label: "Products Page Hero", type: "Original Section" },
+    { id: "products-native-1", label: "Catalog Filters and Product Grid", type: "Original Section" }
+  ],
+  "product-detail": [
+    { id: "product-detail-native-0", label: "Product Detail Hero", type: "Original Section" },
+    { id: "product-detail-native-1", label: "Product Detail Content", type: "Original Section" }
+  ],
+  capabilities: [
+    { id: "capabilities-native-0", label: "Capabilities Page Hero", type: "Original Section" },
+    { id: "capabilities-native-1", label: "Factory Capabilities", type: "Original Section" },
+    { id: "capabilities-native-2", label: "Supply Chain Workflow", type: "Original Section" }
+  ],
+  about: [
+    { id: "about-native-0", label: "About Page Hero", type: "Original Section" },
+    { id: "about-native-1", label: "About Company Content", type: "Original Section" }
+  ],
+  contact: [
+    { id: "contact-native-0", label: "Contact Page Hero", type: "Original Section" },
+    { id: "contact-native-1", label: "Contact Form and Details", type: "Original Section" }
+  ],
+  catalog: [
+    { id: "catalog-native-0", label: "Catalog Page Hero", type: "Original Section" },
+    { id: "catalog-native-1", label: "Catalog Download Placeholder", type: "Original Section" }
+  ]
+};
 
 let siteContent = {};
 let productData = { products: [] };
@@ -147,9 +186,12 @@ function ensurePageBuilder() {
   pageBuilder.pages = pageBuilder.pages || {};
   pageBuilder.elementStyles = pageBuilder.elementStyles || {};
   pageBuilder.layers = pageBuilder.layers || {};
+  pageBuilder.nativeSections = pageBuilder.nativeSections || {};
+  pageBuilder.sectionOrder = pageBuilder.sectionOrder || {};
   pageBuilder.layers.homeHero = pageBuilder.layers.homeHero || [];
   SECTION_PAGES.forEach((page) => {
     pageBuilder.pages[page] = pageBuilder.pages[page] || [];
+    ensureSectionOrder(page);
   });
 }
 
@@ -477,11 +519,22 @@ function selectedStyleColor(label, property, fallback = "#151515") {
   }, fallback);
 }
 
+function selectedStyleText(label, property, fallback = "") {
+  return simpleInput(label, selectedStyle()[property] || fallback, (value) => {
+    if (value) selectedStyle()[property] = value;
+    else delete selectedStyle()[property];
+  });
+}
+
 function selectedStyleSelect(label, property, options) {
   return selectInput(label, selectedStyle()[property] || options[0], options, (value) => {
     if (value) selectedStyle()[property] = value;
     else delete selectedStyle()[property];
   });
+}
+
+function selectedElementIsHomeHero() {
+  return selectedElement?.page === "home" && selectedElement?.sectionKey === "native:home-native-0";
 }
 
 function checkboxControl(label, checked, onChange) {
@@ -500,13 +553,18 @@ function checkboxControl(label, checked, onChange) {
 
 function moveSelectedSection(direction) {
   const page = selectedElement?.page || selectedPage;
-  const sections = pageBuilder.pages?.[page] || [];
-  const index = Number(selectedElement?.sectionIndex);
+  const order = ensureSectionOrder(page);
+  let key = selectedElement?.sectionKey || "";
+  if (!key && selectedElement?.sectionIndex !== undefined) {
+    const section = pageBuilder.pages?.[page]?.[Number(selectedElement.sectionIndex)];
+    key = section ? builderSectionKey(section) : "";
+  }
+  const index = order.indexOf(key);
   const nextIndex = index + direction;
-  if (!Number.isInteger(index) || nextIndex < 0 || nextIndex >= sections.length) return;
-  [sections[index], sections[nextIndex]] = [sections[nextIndex], sections[index]];
-  selectedElement.sectionIndex = String(nextIndex);
+  if (index < 0 || nextIndex < 0 || nextIndex >= order.length) return;
+  [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
   selectedSectionIndex = nextIndex;
+  selectedElement.sectionKey = key;
   renderSectionsEditor();
   renderSelectedElementEditor();
   sendPreviewUpdate();
@@ -702,14 +760,18 @@ function selectedElementControlsForType(type) {
     return controls;
   }
 
-  add(selectedStyleColor("Background color", "backgroundColor", "#F3EBDD"));
-  add(simpleInput("Background image path", selectedSection()?.backgroundImage || selectedStyle().backgroundImage || "", (value) => {
+  const heroSelected = selectedElementIsHomeHero();
+  const backgroundImageValue = selectedSection()?.backgroundImage
+    || selectedStyle().backgroundImage
+    || (heroSelected ? HERO_BACKGROUND_DEFAULTS.image : "");
+  add(selectedStyleColor("Background color", "backgroundColor", heroSelected ? "#12201B" : "#F3EBDD"));
+  add(simpleInput("Background image path", backgroundImageValue, (value) => {
     const section = selectedSection();
     if (section) section.backgroundImage = value;
     selectedStyle().backgroundImage = value;
   }));
-  add(selectedStyleColor("Overlay color", "overlayColor", "#12201B"));
-  add(selectedStyleInput("Overlay opacity", "overlayOpacity"));
+  add(selectedStyleColor("Overlay color", "overlayColor", HERO_BACKGROUND_DEFAULTS.overlayColor));
+  add(selectedStyleText("Overlay opacity", "overlayOpacity", heroSelected ? HERO_BACKGROUND_DEFAULTS.overlayOpacity : ""));
   add(selectedStyleColor("Text color", "color", "#151515"));
   add(selectedStyleInput("Padding", "padding"));
   add(selectedStyleInput("Margin", "margin"));
@@ -792,8 +854,76 @@ function currentSections() {
   return pageBuilder.pages[selectedPage];
 }
 
+function nativeSectionKey(id) {
+  return `native:${id}`;
+}
+
+function builderSectionKey(section) {
+  return `builder:${section.id}`;
+}
+
+function sectionKeyItem(key, page = selectedPage) {
+  if (key.startsWith("native:")) {
+    const id = key.replace("native:", "");
+    const definition = (NATIVE_SECTIONS[page] || []).find((item) => item.id === id);
+    const state = pageBuilder.nativeSections?.[page]?.[id] || {};
+    if (!definition || state.deleted) return null;
+    return { key, kind: "native", id, definition, state };
+  }
+  if (key.startsWith("builder:")) {
+    const id = key.replace("builder:", "");
+    const section = (pageBuilder.pages?.[page] || []).find((item) => item.id === id);
+    if (!section) return null;
+    return { key, kind: "builder", id, section };
+  }
+  return null;
+}
+
+function ensureSectionOrder(page = selectedPage) {
+  pageBuilder.pages = pageBuilder.pages || {};
+  pageBuilder.nativeSections = pageBuilder.nativeSections || {};
+  pageBuilder.sectionOrder = pageBuilder.sectionOrder || {};
+  pageBuilder.pages[page] = pageBuilder.pages[page] || [];
+  pageBuilder.nativeSections[page] = pageBuilder.nativeSections[page] || {};
+
+  (NATIVE_SECTIONS[page] || []).forEach((definition) => {
+    const existing = pageBuilder.nativeSections[page][definition.id] || {};
+    pageBuilder.nativeSections[page][definition.id] = {
+      label: definition.label,
+      type: definition.type,
+      ...existing
+    };
+  });
+
+  const nativeKeys = (NATIVE_SECTIONS[page] || [])
+    .filter((definition) => !pageBuilder.nativeSections[page][definition.id]?.deleted)
+    .map((definition) => nativeSectionKey(definition.id));
+  const builderKeys = pageBuilder.pages[page].map(builderSectionKey);
+  const validKeys = new Set([...nativeKeys, ...builderKeys]);
+  const currentOrder = Array.isArray(pageBuilder.sectionOrder[page]) ? pageBuilder.sectionOrder[page] : [];
+  const nextOrder = currentOrder.filter((key) => validKeys.has(key));
+  [...nativeKeys, ...builderKeys].forEach((key) => {
+    if (!nextOrder.includes(key)) nextOrder.push(key);
+  });
+  pageBuilder.sectionOrder[page] = nextOrder;
+  return nextOrder;
+}
+
+function currentSectionItems(page = selectedPage) {
+  return ensureSectionOrder(page)
+    .map((key) => sectionKeyItem(key, page))
+    .filter(Boolean);
+}
+
+function currentSectionItem() {
+  const items = currentSectionItems();
+  if (selectedSectionIndex >= items.length) selectedSectionIndex = Math.max(0, items.length - 1);
+  return items[selectedSectionIndex] || null;
+}
+
 function currentSection() {
-  return currentSections()[selectedSectionIndex];
+  const item = currentSectionItem();
+  return item?.kind === "builder" ? item.section : null;
 }
 
 function defaultHomeHeroLayers() {
@@ -801,9 +931,11 @@ function defaultHomeHeroLayers() {
 }
 
 function currentLayerCollectionId() {
-  if (selectedPage === "home") return "homeHero";
-  const section = currentSection();
-  return section ? `${selectedPage}:${section.id}` : selectedPage;
+  const item = currentSectionItem();
+  if (selectedPage === "home" && item?.id === "home-native-0") return "homeHero";
+  if (item?.kind === "builder") return `${selectedPage}:${item.section.id}`;
+  if (item?.kind === "native") return `${selectedPage}:${item.id}`;
+  return selectedPage;
 }
 
 function currentLayers() {
@@ -1062,10 +1194,113 @@ function renderLayerManager() {
   return wrapper;
 }
 
+function sectionItemLabel(item, fallbackIndex) {
+  if (item?.kind === "native") return item.state.label || item.definition.label;
+  if (item?.kind === "builder") return sectionLabel(item.section, fallbackIndex);
+  return "Section";
+}
+
+function sectionItemType(item) {
+  if (item?.kind === "native") return item.state.type || item.definition.type || "Original Section";
+  if (item?.kind === "builder") return item.section.type || "Page Builder Section";
+  return "";
+}
+
+function sectionItemHidden(item) {
+  if (item?.kind === "native") return Boolean(item.state.hidden || item.state.deleted);
+  if (item?.kind === "builder") return Boolean(item.section.hidden);
+  return false;
+}
+
+function moveSectionItem(direction) {
+  const order = ensureSectionOrder();
+  const nextIndex = selectedSectionIndex + direction;
+  if (nextIndex < 0 || nextIndex >= order.length) return false;
+  [order[selectedSectionIndex], order[nextIndex]] = [order[nextIndex], order[selectedSectionIndex]];
+  selectedSectionIndex = nextIndex;
+  return true;
+}
+
+function toggleSectionItemHidden(item) {
+  if (!item) return;
+  if (item.kind === "native") {
+    item.state.hidden = !item.state.hidden;
+    if (!item.state.hidden) item.state.deleted = false;
+  } else {
+    item.section.hidden = !item.section.hidden;
+  }
+}
+
+function duplicateSectionItem(item) {
+  if (!item) return;
+  const sections = currentSections();
+  const order = ensureSectionOrder();
+  let clone;
+  if (item.kind === "builder") {
+    clone = JSON.parse(JSON.stringify(item.section));
+    clone.id = `section-${Date.now()}`;
+    clone.hidden = false;
+    clone.title = clone.title || { en: `${sectionItemLabel(item)} copy` };
+  } else {
+    clone = defaultSection("Custom HTML/Text Block");
+    clone.title = {
+      en: `${sectionItemLabel(item)} copy`,
+      es: `${sectionItemLabel(item)} copy`,
+      zh: `${sectionItemLabel(item)} copy`
+    };
+    clone.body = {
+      en: "Duplicated from an original page section. Edit this builder copy as needed.",
+      es: "Duplicado desde una sección original. Edite esta copia según sea necesario.",
+      zh: "从原始页面板块复制。请根据需要编辑此构建器副本。"
+    };
+  }
+  sections.push(clone);
+  const cloneKey = builderSectionKey(clone);
+  const insertAt = Math.min(selectedSectionIndex + 1, order.length);
+  order.splice(insertAt, 0, cloneKey);
+  selectedSectionIndex = insertAt;
+}
+
+function deleteSectionItem(item) {
+  if (!item) return;
+  const order = ensureSectionOrder();
+  if (item.kind === "native") {
+    item.state.hidden = true;
+    item.state.deleted = true;
+  } else {
+    const sections = currentSections();
+    const index = sections.findIndex((section) => section.id === item.section.id);
+    if (index >= 0) sections.splice(index, 1);
+  }
+  pageBuilder.sectionOrder[selectedPage] = order.filter((key) => key !== item.key);
+  selectedSectionIndex = Math.max(0, Math.min(selectedSectionIndex, pageBuilder.sectionOrder[selectedPage].length - 1));
+  ensureSectionOrder();
+}
+
+function renderNativeSectionFields(item) {
+  const fields = document.createElement("div");
+  fields.className = "nested-editor";
+  fields.append(Object.assign(document.createElement("h3"), { textContent: "Original section settings" }));
+  fields.append(simpleInput("Section label", item.state.label || item.definition.label, (value) => {
+    item.state.label = value || item.definition.label;
+  }));
+  fields.append(checkboxControl("Hidden", sectionItemHidden(item), (checked) => {
+    item.state.hidden = checked;
+    if (!checked) item.state.deleted = false;
+  }));
+  const note = document.createElement("p");
+  note.className = "help-text";
+  note.textContent = "This original HTML section can be moved, hidden, soft-deleted, or duplicated as an editable builder copy. Use click-to-edit in the preview for the text and visual controls inside it.";
+  fields.append(note);
+  return fields;
+}
+
 function renderSectionsEditor() {
   sectionsEditor.innerHTML = "";
   sectionsEditor.append(Object.assign(document.createElement("h2"), { textContent: "Page Sections" }));
   const sections = currentSections();
+  const order = ensureSectionOrder();
+  let items = currentSectionItems();
   const addRow = document.createElement("div");
   addRow.className = "button-row";
   const typeSelect = document.createElement("select");
@@ -1080,8 +1315,11 @@ function renderSectionsEditor() {
   add.className = "secondary-button";
   add.textContent = "Add section";
   add.addEventListener("click", () => {
-    sections.push(defaultSection(typeSelect.value));
-    selectedSectionIndex = sections.length - 1;
+    const section = defaultSection(typeSelect.value);
+    sections.push(section);
+    const insertAt = items.length ? Math.min(selectedSectionIndex + 1, order.length) : order.length;
+    order.splice(insertAt, 0, builderSectionKey(section));
+    selectedSectionIndex = insertAt;
     renderSectionsEditor();
     sendPreviewUpdate();
   });
@@ -1090,11 +1328,19 @@ function renderSectionsEditor() {
 
   const list = document.createElement("div");
   list.className = "section-list";
-  sections.forEach((section, index) => {
+  items = currentSectionItems();
+  items.forEach((item, index) => {
     const row = document.createElement("button");
     row.type = "button";
-    row.className = `section-row${index === selectedSectionIndex ? " is-active" : ""}`;
-    row.innerHTML = `<strong>${sectionLabel(section, index)}</strong><span>${section.type}${section.hidden ? " · Hidden" : ""}</span>`;
+    row.className = `section-row${index === selectedSectionIndex ? " is-active" : ""}${sectionItemHidden(item) ? " is-hidden" : ""}`;
+    const tags = [
+      sectionItemType(item),
+      item.kind === "native" ? "Original" : "Builder",
+      sectionItemHidden(item) ? "Hidden" : "",
+      index === 0 ? "First" : "",
+      index === items.length - 1 ? "Last" : ""
+    ].filter(Boolean).join(" · ");
+    row.innerHTML = `<strong>${sectionItemLabel(item, index)}</strong><span>${tags}</span>`;
     row.addEventListener("click", () => {
       selectedSectionIndex = index;
       renderSectionsEditor();
@@ -1103,38 +1349,27 @@ function renderSectionsEditor() {
   });
   sectionsEditor.append(list);
 
-  const section = currentSection();
-  if (!section) {
+  const item = currentSectionItem();
+  if (!item) {
     sectionsEditor.append(renderLayerManager());
     return;
   }
   const actions = document.createElement("div");
   actions.className = "button-row";
   [
-    ["Move up", () => {
-      if (selectedSectionIndex <= 0) return;
-      [sections[selectedSectionIndex - 1], sections[selectedSectionIndex]] = [sections[selectedSectionIndex], sections[selectedSectionIndex - 1]];
-      selectedSectionIndex -= 1;
-    }],
-    ["Move down", () => {
-      if (selectedSectionIndex >= sections.length - 1) return;
-      [sections[selectedSectionIndex + 1], sections[selectedSectionIndex]] = [sections[selectedSectionIndex], sections[selectedSectionIndex + 1]];
-      selectedSectionIndex += 1;
-    }],
-    [section.hidden ? "Show" : "Hide", () => { section.hidden = !section.hidden; }],
-    ["Duplicate", () => {
-      sections.splice(selectedSectionIndex + 1, 0, JSON.parse(JSON.stringify({ ...section, id: `section-${Date.now()}` })));
-      selectedSectionIndex += 1;
-    }],
-    ["Delete", () => {
-      sections.splice(selectedSectionIndex, 1);
-      selectedSectionIndex = Math.max(0, selectedSectionIndex - 1);
-    }]
-  ].forEach(([label, handler]) => {
+    ["Move up", () => moveSectionItem(-1), selectedSectionIndex <= 0],
+    ["Move down", () => moveSectionItem(1), selectedSectionIndex >= items.length - 1],
+    [sectionItemHidden(item) ? "Show" : "Hide", () => toggleSectionItemHidden(item), false],
+    ["Duplicate", () => duplicateSectionItem(item), false],
+    ["Delete", () => deleteSectionItem(item), false]
+  ].forEach(([label, handler, disabled]) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = label === "Delete" ? "danger-button" : "secondary-button";
     button.textContent = label;
+    button.disabled = disabled;
+    if (disabled && label === "Move up") button.title = "This section is already first.";
+    if (disabled && label === "Move down") button.title = "This section is already last.";
     button.addEventListener("click", () => {
       handler();
       renderSectionsEditor();
@@ -1142,7 +1377,8 @@ function renderSectionsEditor() {
     });
     actions.append(button);
   });
-  sectionsEditor.append(actions, renderSectionFields(section), renderLayerManager());
+  const fields = item.kind === "builder" ? renderSectionFields(item.section) : renderNativeSectionFields(item);
+  sectionsEditor.append(actions, fields, renderLayerManager());
 }
 
 function renderContentFields() {
@@ -1516,8 +1752,15 @@ function downloadChanges() {
 window.addEventListener("message", (event) => {
   if (event.data?.type !== "mega-furnit-element-selected") return;
   selectedElement = event.data.element;
-  if (selectedElement?.page === selectedPage && selectedElement.sectionIndex !== undefined) {
-    selectedSectionIndex = Number(selectedElement.sectionIndex);
+  if (selectedElement?.page === selectedPage && selectedElement.sectionKey) {
+    const index = currentSectionItems().findIndex((item) => item.key === selectedElement.sectionKey);
+    if (index >= 0) selectedSectionIndex = index;
+    renderSectionsEditor();
+  } else if (selectedElement?.page === selectedPage && selectedElement.sectionIndex !== undefined) {
+    const section = pageBuilder.pages?.[selectedPage]?.[Number(selectedElement.sectionIndex)];
+    const key = section ? builderSectionKey(section) : "";
+    const index = currentSectionItems().findIndex((item) => item.key === key);
+    selectedSectionIndex = index >= 0 ? index : Number(selectedElement.sectionIndex);
     renderSectionsEditor();
   }
   renderSelectedElementEditor();
