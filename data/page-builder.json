@@ -28,7 +28,9 @@
   },
   "layers": {
     "homeHero": [],
-    "home:home-native-3": []
+    "home:home-native-3": [],
+    "home:home-native-1": [],
+    "home:home-native-2": []
   },
   "nativeSections": {
     "home": {
@@ -160,6 +162,41 @@
   "elementStyles": {
     "product-MF-SF001-image": {},
     "product-MF-SF001-name": {},
-    "section-native-product-detail-native-1": {}
+    "section-native-product-detail-native-1": {},
+    "site-brandName": {
+      "fontFamily": "Times New Roman"
+    },
+    "i18n-brandTagline": {
+      "fontFamily": "Times New Roman"
+    },
+    "site-languageZhLabel": {},
+    "i18n-navHome": {},
+    "i18n-heroEyebrow": {
+      "fontFamily": "Times New Roman"
+    },
+    "site-heroTitle": {},
+    "site-heroText": {},
+    "section-native-home-native-0": {},
+    "home--metric-0": {},
+    "site-metricOwnedNumber": {},
+    "i18n-ownedFactories": {},
+    "section-native-home-native-2": {},
+    "home--metric-1": {},
+    "site-metricPartnerNumber": {},
+    "i18n-partnerFactories": {},
+    "i18n-regionalPrograms": {},
+    "site-metricRegionalNumber": {},
+    "i18n-trustTitle": {},
+    "i18n-capabilityOne": {},
+    "i18n-capabilityOneText": {},
+    "i18n-trustText": {},
+    "i18n-upholsteredTitle": {},
+    "i18n-upholsteredText": {
+      "color": "#151515"
+    },
+    "i18n-panelTitle": {},
+    "site-homeCapabilityOneNumber": {},
+    "home--capability-item-0": {},
+    "i18n-panelText": {}
   }
 }
