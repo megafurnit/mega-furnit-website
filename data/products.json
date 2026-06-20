@@ -39,7 +39,12 @@
         "es": "Programa modular escalable para pedidos por contenedor y stock regional.",
         "zh": "适合整柜订单和区域库存项目的模块化沙发系列。"
       },
-      "image": "assets/images/uploads/20260331194902-384-2-20260620204734.jpg"
+      "image": "assets/images/uploads/20260331200410-389-2-20260620210429-8.jpg",
+      "gallery": [
+        "assets/images/uploads/20260331122238-378-2-20260620210407-4.jpg",
+        "assets/images/uploads/20260331194902-384-2-20260620210407-5.jpg",
+        "assets/images/uploads/20260331194903-385-2-20260620210407-6.jpg"
+      ]
     },
     {
       "id": "MF-SF002",
