@@ -27,7 +27,8 @@
     "catalog": []
   },
   "layers": {
-    "homeHero": []
+    "homeHero": [],
+    "home:home-native-3": []
   },
   "nativeSections": {
     "home": {
@@ -150,5 +151,15 @@
       "native:catalog-native-0",
       "native:catalog-native-1"
     ]
+  },
+  "_schema": {
+    "schemaVersion": "1.0.0",
+    "dataType": "page-builder",
+    "lastUpdatedBy": "Mega Furnit Visual Editor"
+  },
+  "elementStyles": {
+    "product-MF-SF001-image": {},
+    "product-MF-SF001-name": {},
+    "section-native-product-detail-native-1": {}
   }
 }
