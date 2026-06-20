@@ -73,5 +73,10 @@
     "aboutChinaLabel": "中国",
     "aboutVietnamLabel": "越南",
     "aboutNetworkLabel": "网络"
+  },
+  "_schema": {
+    "schemaVersion": "1.0.0",
+    "dataType": "site-content",
+    "lastUpdatedBy": "Mega Furnit Visual Editor"
   }
 }
