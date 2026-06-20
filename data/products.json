@@ -39,7 +39,7 @@
         "es": "Programa modular escalable para pedidos por contenedor y stock regional.",
         "zh": "适合整柜订单和区域库存项目的模块化沙发系列。"
       },
-      "image": "assets/images/placeholder-furniture.svg"
+      "image": "assets/images/uploads/20260331194902-384-2-20260620204734.jpg"
     },
     {
       "id": "MF-SF002",
@@ -738,5 +738,10 @@
       },
       "image": "assets/images/placeholder-furniture.svg"
     }
-  ]
+  ],
+  "_schema": {
+    "schemaVersion": "1.0.0",
+    "dataType": "products",
+    "lastUpdatedBy": "Mega Furnit Visual Editor"
+  }
 }
