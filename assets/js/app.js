@@ -7,6 +7,7 @@ const HERO_BACKGROUND_DEFAULTS = {
   overlayOpacity: "0.86",
   overlayRightRatio: 0.44
 };
+const SCHEMA_VERSION = "1.0.0";
 const NATIVE_SECTIONS = {
   home: ["home-native-0", "home-native-1", "home-native-2", "home-native-3", "home-native-4"],
   products: ["products-native-0", "products-native-1"],
@@ -129,18 +130,37 @@ async function loadOptionalJson(path) {
 
 function normalizeProducts(productData) {
   if (Array.isArray(productData)) return productData;
-  return productData.products || [];
+  return Array.isArray(productData?.products) ? productData.products : [];
+}
+
+function normalizeSiteContent(contentData) {
+  const normalized = contentData && typeof contentData === "object" ? contentData : {};
+  LANGUAGES.forEach((language) => {
+    normalized[language] = normalized[language] || {};
+  });
+  normalized._schema = {
+    schemaVersion: SCHEMA_VERSION,
+    dataType: "site-content",
+    ...(normalized._schema || {})
+  };
+  return normalized;
 }
 
 function normalizePageBuilder(builderData) {
+  const normalized = builderData && typeof builderData === "object" ? builderData : {};
   return {
-    ...builderData,
-    theme: builderData.theme || {},
-    pages: builderData.pages || {},
-    elementStyles: builderData.elementStyles || {},
-    layers: builderData.layers || {},
-    nativeSections: builderData.nativeSections || {},
-    sectionOrder: builderData.sectionOrder || {}
+    ...normalized,
+    _schema: {
+      schemaVersion: SCHEMA_VERSION,
+      dataType: "page-builder",
+      ...(normalized._schema || {})
+    },
+    theme: normalized.theme || {},
+    pages: normalized.pages || {},
+    elementStyles: normalized.elementStyles || {},
+    layers: normalized.layers || {},
+    nativeSections: normalized.nativeSections || {},
+    sectionOrder: normalized.sectionOrder || {}
   };
 }
 
@@ -152,9 +172,11 @@ function applyTranslations() {
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     const key = element.dataset.i18n;
     element.textContent = t(key);
+    const sectionKey = element.dataset.sectionKey || element.closest("[data-section-key]")?.dataset.sectionKey || "";
     assignEditable(element, editableTypeForElement(element), `i18n-${key}`, `siteContent.${currentLanguage}.${key}`, {
       editableSource: "siteContent",
       editableField: key,
+      editableSectionKey: sectionKey,
       forceEditable: true
     });
   });
@@ -189,11 +211,13 @@ function applyCmsContent() {
     const key = element.dataset.cms;
     element.textContent = cmsText(key);
     const type = editableTypeForElement(element);
+    const sectionKey = element.dataset.sectionKey || element.closest("[data-section-key]")?.dataset.sectionKey || "";
     element.dataset.editableId = `site-${key}`;
     element.dataset.editableType = type;
     element.dataset.editablePath = `siteContent.${currentLanguage}.${key}`;
     element.dataset.editableSource = "siteContent";
     element.dataset.editableField = key;
+    element.dataset.editableSectionKey = sectionKey;
   });
 }
 
@@ -202,9 +226,11 @@ function applyStaticCmsContent() {
     const key = element.dataset.staticCms;
     const value = cmsText(key);
     if (value) element.textContent = value;
+    const sectionKey = element.dataset.sectionKey || element.closest("[data-section-key]")?.dataset.sectionKey || "";
     assignEditable(element, element.dataset.staticType || editableTypeForElement(element), `site-${key}`, `siteContent.${currentLanguage}.${key}`, {
       editableSource: "siteContent",
-      editableField: key
+      editableField: key,
+      editableSectionKey: sectionKey
     });
   });
 }
@@ -285,10 +311,13 @@ function assignNativeSectionMetadata(pageKey) {
   [...main.children].forEach((element) => {
     if (element.dataset.builderSection === "true") return;
     if (!element.dataset.nativeSectionId) {
-      element.dataset.nativeSectionId = `${pageKey}-native-${nativeIndex}`;
+      element.dataset.nativeSectionId = element.dataset.sectionId || `${pageKey}-native-${nativeIndex}`;
     }
     const sectionKey = nativeSectionKey(element.dataset.nativeSectionId);
     element.dataset.sectionKey = sectionKey;
+    element.dataset.sectionId = element.dataset.nativeSectionId;
+    element.dataset.sectionSource = element.dataset.sectionSource || "native";
+    element.dataset.editableSection = sectionKey;
     element.dataset.editableSectionKey = sectionKey;
     nativeIndex += 1;
   });
@@ -316,7 +345,10 @@ function markStructuralEditables() {
   ].forEach(([selector, type]) => {
     document.querySelectorAll(selector).forEach((element, index) => {
       const sectionKey = element.dataset.sectionKey || element.closest("[data-section-key]")?.dataset.sectionKey || "";
-      assignEditable(element, type, `${page}-${type}-${index}`, "", {
+      const stableId = sectionKey && (element.matches(".hero, .page-hero, .metric-band, .section, .filters, .contact-form, form[name='inquiry']"))
+        ? `section-${sectionKey.replace(/[^a-z0-9]+/gi, "-")}`
+        : `${page}-${type}-${index}`;
+      assignEditable(element, type, stableId, "", {
         editablePage: page,
         editableSectionKey: sectionKey
       });
@@ -331,7 +363,11 @@ function markStructuralEditables() {
     [".workflow li", "card"]
   ].forEach(([selector, type]) => {
     document.querySelectorAll(selector).forEach((element, index) => {
-      assignEditable(element, type, `${page}-${selector.replace(/[^a-z0-9]+/gi, "-")}-${index}`, "", { editablePage: page });
+      const sectionKey = element.dataset.sectionKey || element.closest("[data-section-key]")?.dataset.sectionKey || "";
+      assignEditable(element, type, `${page}-${selector.replace(/[^a-z0-9]+/gi, "-")}-${index}`, "", {
+        editablePage: page,
+        editableSectionKey: sectionKey
+      });
     });
   });
 }
@@ -409,6 +445,8 @@ function elementLabel(element) {
 }
 
 function sendSelectedElement(element) {
+  const parentSection = element.closest("[data-section-key]");
+  const sectionKey = element.dataset.editableSectionKey || element.dataset.sectionKey || parentSection?.dataset.sectionKey || "";
   selectedEditableId = element.dataset.editableId;
   applyElementStyles();
   window.parent.postMessage({
@@ -421,7 +459,7 @@ function sendSelectedElement(element) {
       field: element.dataset.editableField || "",
       page: element.dataset.editablePage || currentPageKey(),
       sectionIndex: element.dataset.editableSectionIndex,
-      sectionKey: element.dataset.editableSectionKey || element.dataset.sectionKey || "",
+      sectionKey,
       productId: element.dataset.editableProductId || "",
       layerId: element.dataset.editableLayerId || "",
       layerCollection: element.dataset.editableLayerCollection || "",
@@ -430,6 +468,37 @@ function sendSelectedElement(element) {
       label: elementLabel(element)
     }
   }, "*");
+}
+
+function sectionForEventTarget(target) {
+  return target.closest("[data-section-key]");
+}
+
+function sendFocusedSection(section, element = null) {
+  if (!section?.dataset.sectionKey) return;
+  window.parent.postMessage({
+    type: "mega-furnit-section-focused",
+    sectionKey: section.dataset.sectionKey,
+    editableId: element?.dataset.editableId || "",
+    editableType: element?.dataset.editableType || "",
+    page: currentPageKey()
+  }, "*");
+}
+
+function highlightSection(section) {
+  if (!section) return;
+  section.classList.remove("is-editor-section-focused");
+  void section.offsetWidth;
+  section.classList.add("is-editor-section-focused");
+  window.setTimeout(() => section.classList.remove("is-editor-section-focused"), 1400);
+}
+
+function focusSectionInPreview(sectionKey) {
+  if (!sectionKey) return;
+  const section = document.querySelector(`[data-section-key="${CSS.escape(sectionKey)}"]`);
+  if (!section || section.hidden) return;
+  section.scrollIntoView({ behavior: "smooth", block: "center" });
+  highlightSection(section);
 }
 
 function setupEditableInspector() {
@@ -459,6 +528,17 @@ function setupEditableInspector() {
     }
 
     if (target) sendSelectedElement(target);
+  }, true);
+  document.addEventListener("dblclick", (event) => {
+    if (!editorPreviewMode || previewInteractionMode === "navigate") return;
+    const target = editableTarget(event);
+    const section = sectionForEventTarget(event.target);
+    if (!section) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    if (target) sendSelectedElement(target);
+    sendFocusedSection(section, target);
   }, true);
 }
 
@@ -516,12 +596,18 @@ function layerPositionStyle(layer) {
 }
 
 function layerAttrs(layer, collectionId, pageKey, sectionIndex) {
+  const sectionKey = collectionId === "homeHero"
+    ? "native:home-native-0"
+    : collectionId.includes(":")
+      ? `builder:${collectionId.split(":").slice(1).join(":")}`
+      : "";
   return editableAttrs("design-layer", `layer-${layer.id}`, `pageBuilder.layers.${collectionId}.${layer.id}`, {
     "data-editable-source": "pageBuilderLayer",
     "data-editable-layer-id": layer.id,
     "data-editable-layer-collection": collectionId,
     "data-editable-page": pageKey,
-    "data-editable-section-index": sectionIndex
+    "data-editable-section-index": sectionIndex,
+    "data-editable-section-key": sectionKey
   });
 }
 
@@ -675,7 +761,10 @@ function renderSection(section, index, pageKey) {
     "data-editable-section-index": index,
     "data-editable-section-key": builderSectionKey(section),
     "data-builder-section": "true",
-    "data-section-key": builderSectionKey(section)
+    "data-section-key": builderSectionKey(section),
+    "data-section-id": sectionId,
+    "data-section-source": "builder",
+    "data-editable-section": builderSectionKey(section)
   });
   const headingAttrs = editableAttrs("heading", `section-${sectionId}-heading`, `pageBuilder.pages.${pageKey}.${index}.title`, {
     "data-editable-source": "pageBuilder",
@@ -762,6 +851,9 @@ function renderPageSections() {
     [...template.content.children].forEach((element) => {
       element.dataset.builderSection = "true";
       element.dataset.sectionKey = builderSectionKey(section);
+      element.dataset.sectionId = section.id;
+      element.dataset.sectionSource = "builder";
+      element.dataset.editableSection = builderSectionKey(section);
       element.dataset.editableSectionKey = builderSectionKey(section);
       fragment.append(element);
     });
@@ -986,7 +1078,7 @@ function applyPreviewState(previewState) {
     currentLanguage = normalizeLanguage(previewState.language);
   }
   if (previewState.cmsContent) {
-    cmsContent = previewState.cmsContent;
+    cmsContent = normalizeSiteContent(previewState.cmsContent);
   }
   if (previewState.productData) {
     products = normalizeProducts(previewState.productData);
@@ -1009,6 +1101,10 @@ window.addEventListener("message", (event) => {
     applyElementStyles();
     return;
   }
+  if (event.data?.type === "mega-furnit-focus-section") {
+    focusSectionInPreview(event.data.sectionKey);
+    return;
+  }
   applyPreviewState(event.data);
 });
 
@@ -1026,7 +1122,7 @@ async function init() {
       loadOptionalJson("data/page-builder.json")
     ]);
     translations = translationData;
-    cmsContent = cmsData;
+    cmsContent = normalizeSiteContent(cmsData);
     pageBuilder = normalizePageBuilder(builderData);
     products = normalizeProducts(productData);
     applyTranslations();

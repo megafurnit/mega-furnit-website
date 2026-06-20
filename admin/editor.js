@@ -97,6 +97,7 @@ const HERO_BACKGROUND_DEFAULTS = {
   overlayColor: "#12201B",
   overlayOpacity: "0.86"
 };
+const SCHEMA_VERSION = "1.0.0";
 const NATIVE_SECTIONS = {
   home: [
     { id: "home-native-0", label: "Hero Banner", type: "Original Section" },
@@ -141,6 +142,8 @@ let selectedProductIndex = 0;
 let selectedSectionIndex = 0;
 let selectedElement = null;
 let previewInteractionMode = "edit";
+let expandedSectionKey = "";
+let expandedEditableId = "";
 let pendingUploads = new Map();
 let aiDraft = null;
 
@@ -176,12 +179,36 @@ async function loadOptionalJson(path, fallback) {
 }
 
 function ensureLanguageObjects() {
+  siteContent._schema = {
+    schemaVersion: SCHEMA_VERSION,
+    dataType: "site-content",
+    lastUpdatedBy: siteContent._schema?.lastUpdatedBy || "Mega Furnit Visual Editor",
+    ...(siteContent._schema || {})
+  };
   LANGUAGES.forEach((language) => {
     siteContent[language] = siteContent[language] || {};
   });
 }
 
+function normalizeProductData(data) {
+  const normalized = Array.isArray(data) ? { products: data } : { ...(data || {}) };
+  normalized._schema = {
+    schemaVersion: SCHEMA_VERSION,
+    dataType: "products",
+    lastUpdatedBy: normalized._schema?.lastUpdatedBy || "Mega Furnit Visual Editor",
+    ...(normalized._schema || {})
+  };
+  normalized.products = Array.isArray(normalized.products) ? normalized.products : [];
+  return normalized;
+}
+
 function ensurePageBuilder() {
+  pageBuilder._schema = {
+    schemaVersion: SCHEMA_VERSION,
+    dataType: "page-builder",
+    lastUpdatedBy: pageBuilder._schema?.lastUpdatedBy || "Mega Furnit Visual Editor",
+    ...(pageBuilder._schema || {})
+  };
   pageBuilder.theme = { ...THEME_DEFAULTS, ...(pageBuilder.theme || {}) };
   pageBuilder.pages = pageBuilder.pages || {};
   pageBuilder.elementStyles = pageBuilder.elementStyles || {};
@@ -1295,6 +1322,323 @@ function renderNativeSectionFields(item) {
   return fields;
 }
 
+function sectionItemByKey(key) {
+  return currentSectionItems().find((item) => item.key === key) || null;
+}
+
+function selectSectionItem(index, options = {}) {
+  const items = currentSectionItems();
+  if (!items[index]) return null;
+  selectedSectionIndex = index;
+  const item = items[index];
+  expandedSectionKey = item.key;
+  if (options.clearEditable) expandedEditableId = "";
+  return item;
+}
+
+function focusPreviewSection(item) {
+  if (!item) return;
+  if (sectionItemHidden(item)) {
+    statusMessage.textContent = "This section is hidden. Show it before focusing in preview.";
+    return;
+  }
+  preview.contentWindow?.postMessage({
+    type: "mega-furnit-focus-section",
+    sectionKey: item.key
+  }, "*");
+  statusMessage.textContent = `Focused ${sectionItemLabel(item)} in the preview.`;
+}
+
+function focusSidebarSection(sectionKey, editableId = "") {
+  const index = currentSectionItems().findIndex((item) => item.key === sectionKey);
+  if (index < 0) return;
+  selectedSectionIndex = index;
+  expandedSectionKey = sectionKey;
+  if (editableId) expandedEditableId = editableId;
+  renderSectionsEditor();
+  window.setTimeout(() => {
+    const card = sectionsEditor.querySelector(`[data-section-key="${CSS.escape(sectionKey)}"]`);
+    card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    card?.classList.add("is-attention");
+    window.setTimeout(() => card?.classList.remove("is-attention"), 1200);
+  }, 0);
+}
+
+function editItemElement({ id, type = "text", path = "", source = "", field = "", page = selectedPage, sectionKey = "", sectionIndex = "", productId = "", layerId = "", layerCollection = "", label = "", href = "" }) {
+  return { id, type, path, source, field, page, sectionKey, sectionIndex, productId, layerId, layerCollection, label, href };
+}
+
+function siteEditItem(key, label, type = "text", sectionKey = "") {
+  return {
+    id: `site-${key}`,
+    label,
+    type,
+    element: editItemElement({
+      id: `site-${key}`,
+      type,
+      path: `siteContent.${selectedLanguage}.${key}`,
+      source: "siteContent",
+      field: key,
+      sectionKey,
+      label
+    })
+  };
+}
+
+function i18nEditItem(key, label, type = "text", sectionKey = "") {
+  return {
+    id: `i18n-${key}`,
+    label,
+    type,
+    element: editItemElement({
+      id: `i18n-${key}`,
+      type,
+      path: `siteContent.${selectedLanguage}.${key}`,
+      source: "siteContent",
+      field: key,
+      sectionKey,
+      label
+    })
+  };
+}
+
+function sectionBackgroundEditItem(item) {
+  return {
+    id: `section-${item.key.replace(/[^a-z0-9]+/gi, "-")}-background`,
+    label: item.kind === "native" ? "Section background" : "Section settings",
+    type: item.kind === "native" && item.id === "home-native-0" ? "banner" : "background",
+    element: editItemElement({
+      id: item.kind === "native" ? `section-${item.key.replace(/[^a-z0-9]+/gi, "-")}` : `section-${item.section.id}`,
+      type: item.kind === "native" && item.id === "home-native-0" ? "banner" : "background",
+      source: item.kind === "builder" ? "pageBuilder" : "",
+      path: item.kind === "builder" ? `pageBuilder.pages.${selectedPage}.${currentSections().findIndex((section) => section.id === item.section.id)}` : "",
+      page: selectedPage,
+      sectionKey: item.key,
+      sectionIndex: item.kind === "builder" ? String(currentSections().findIndex((section) => section.id === item.section.id)) : "",
+      label: sectionItemLabel(item)
+    })
+  };
+}
+
+function builderSectionEditItems(item) {
+  const section = item.section;
+  const sectionIndex = currentSections().findIndex((candidate) => candidate.id === section.id);
+  const sectionPath = `pageBuilder.pages.${selectedPage}.${sectionIndex}`;
+  const items = [
+    {
+      id: `section-${section.id}-title`,
+      label: "Section title",
+      type: "heading",
+      element: editItemElement({ id: `section-${section.id}-heading`, type: "heading", path: `${sectionPath}.title`, source: "pageBuilder", field: section.heading ? "heading" : "title", sectionKey: item.key, sectionIndex: String(sectionIndex), label: "Section title" })
+    },
+    {
+      id: `section-${section.id}-body`,
+      label: "Section body",
+      type: "text",
+      element: editItemElement({ id: `section-${section.id}-body`, type: "text", path: `${sectionPath}.body`, source: "pageBuilder", field: section.subtitle ? "subtitle" : "body", sectionKey: item.key, sectionIndex: String(sectionIndex), label: "Section body" })
+    },
+    {
+      id: `section-${section.id}-button`,
+      label: "Button / link",
+      type: "button",
+      element: editItemElement({ id: `section-${section.id}-button`, type: "button", path: `${sectionPath}.buttonText`, source: "pageBuilder", field: "buttonText", sectionKey: item.key, sectionIndex: String(sectionIndex), label: "Button / link", href: section.buttonLink || "" })
+    },
+    sectionBackgroundEditItem(item)
+  ];
+  return items.filter((editableItem) => editableItem.type !== "button" || section.buttonText || section.buttonLink || ["Hero Banner", "CTA Banner", "Image Banner", "Custom HTML/Text Block"].includes(section.type));
+}
+
+function nativeSectionEditItems(item) {
+  const sectionKey = item.key;
+  const map = {
+    "home-native-0": [
+      i18nEditItem("heroEyebrow", "Hero eyebrow", "text", sectionKey),
+      siteEditItem("heroTitle", "Hero title", "heading", sectionKey),
+      siteEditItem("heroText", "Hero subtitle/body", "text", sectionKey),
+      siteEditItem("viewProducts", "View Products button", "button", sectionKey),
+      i18nEditItem("requestQuote", "Request Quote button", "button", sectionKey),
+      sectionBackgroundEditItem(item)
+    ],
+    "home-native-1": [
+      siteEditItem("metricOwnedNumber", "Owned factories number", "heading", sectionKey),
+      i18nEditItem("ownedFactories", "Owned factories label", "text", sectionKey),
+      siteEditItem("metricPartnerNumber", "Partner factories number", "heading", sectionKey),
+      i18nEditItem("partnerFactories", "Partner factories label", "text", sectionKey),
+      siteEditItem("metricRegionalNumber", "Regional programs number", "heading", sectionKey),
+      i18nEditItem("regionalPrograms", "Regional programs label", "text", sectionKey),
+      sectionBackgroundEditItem(item)
+    ],
+    "home-native-2": [
+      i18nEditItem("trustTitle", "Section heading", "heading", sectionKey),
+      i18nEditItem("trustText", "Intro paragraph", "text", sectionKey),
+      i18nEditItem("upholsteredTitle", "Upholstered card title", "heading", sectionKey),
+      i18nEditItem("upholsteredText", "Upholstered card text", "text", sectionKey),
+      i18nEditItem("panelTitle", "Panel furniture card title", "heading", sectionKey),
+      i18nEditItem("panelText", "Panel furniture card text", "text", sectionKey),
+      i18nEditItem("woodTitle", "Solid wood card title", "heading", sectionKey),
+      i18nEditItem("woodText", "Solid wood card text", "text", sectionKey),
+      sectionBackgroundEditItem(item)
+    ],
+    "home-native-3": [
+      i18nEditItem("featuredProducts", "Section heading", "heading", sectionKey),
+      i18nEditItem("productsIntro", "Intro paragraph", "text", sectionKey),
+      sectionBackgroundEditItem(item)
+    ],
+    "home-native-4": [
+      i18nEditItem("supplyTitle", "Section heading", "heading", sectionKey),
+      siteEditItem("supplyText", "Supply text", "text", sectionKey),
+      i18nEditItem("downloadCatalog", "Download Catalog button", "button", sectionKey),
+      i18nEditItem("whatsapp", "WhatsApp button", "button", sectionKey),
+      sectionBackgroundEditItem(item)
+    ],
+    "products-native-0": [i18nEditItem("products", "Page title", "heading", sectionKey), i18nEditItem("productsIntro", "Page intro", "text", sectionKey), sectionBackgroundEditItem(item)],
+    "products-native-1": [i18nEditItem("category", "Category filter label", "text", sectionKey), i18nEditItem("factoryType", "Factory filter label", "text", sectionKey), i18nEditItem("style", "Style filter label", "text", sectionKey), sectionBackgroundEditItem(item)],
+    "product-detail-native-0": [i18nEditItem("productDetailTitle", "Page title", "heading", sectionKey), i18nEditItem("productDetailIntro", "Page intro", "text", sectionKey), sectionBackgroundEditItem(item)],
+    "product-detail-native-1": [sectionBackgroundEditItem(item)],
+    "capabilities-native-0": [i18nEditItem("capabilities", "Page title", "heading", sectionKey), siteEditItem("capabilitiesIntro", "Page intro", "text", sectionKey), sectionBackgroundEditItem(item)],
+    "capabilities-native-1": [i18nEditItem("factoryNetwork", "Section heading", "heading", sectionKey), sectionBackgroundEditItem(item)],
+    "capabilities-native-2": [i18nEditItem("workflowTitle", "Workflow heading", "heading", sectionKey), siteEditItem("supplyText", "Supply text", "text", sectionKey), sectionBackgroundEditItem(item)],
+    "about-native-0": [i18nEditItem("about", "Page title", "heading", sectionKey), siteEditItem("aboutIntro", "Page intro", "text", sectionKey), sectionBackgroundEditItem(item)],
+    "about-native-1": [siteEditItem("aboutBody", "About body", "text", sectionKey), sectionBackgroundEditItem(item)],
+    "contact-native-0": [i18nEditItem("contact", "Page title", "heading", sectionKey), siteEditItem("contactIntro", "Page intro", "text", sectionKey), sectionBackgroundEditItem(item)],
+    "contact-native-1": [siteEditItem("formNote", "Form note", "text", sectionKey), sectionBackgroundEditItem(item)],
+    "catalog-native-0": [i18nEditItem("downloadCatalog", "Page title", "heading", sectionKey), sectionBackgroundEditItem(item)],
+    "catalog-native-1": [sectionBackgroundEditItem(item)]
+  };
+  return map[item.id] || [sectionBackgroundEditItem(item)];
+}
+
+function sectionEditableItems(item) {
+  const baseItems = item.kind === "builder" ? builderSectionEditItems(item) : nativeSectionEditItems(item);
+  const collectionId = item.kind === "native" && item.id === "home-native-0"
+    ? "homeHero"
+    : item.kind === "builder"
+      ? `${selectedPage}:${item.section.id}`
+      : `${selectedPage}:${item.id}`;
+  const layerItems = (pageBuilder.layers?.[collectionId] || []).map((layer) => ({
+    id: `layer-${layer.id}`,
+    label: layer.label || layer.type,
+    type: "design-layer",
+    element: editItemElement({
+      id: `layer-${layer.id}`,
+      type: "design-layer",
+      source: "pageBuilderLayer",
+      layerId: layer.id,
+      layerCollection: collectionId,
+      page: selectedPage,
+      sectionKey: item.key,
+      label: layer.label || layer.type
+    })
+  }));
+  return [...baseItems, ...layerItems];
+}
+
+function renderInlineEditableItem(editableItem, item) {
+  const isOpen = expandedEditableId === editableItem.id;
+  const wrapper = document.createElement("div");
+  wrapper.className = `editable-item${isOpen ? " is-open" : ""}`;
+  wrapper.dataset.editableItemId = editableItem.id;
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "editable-item-toggle";
+  toggle.innerHTML = `<strong>${editableItem.label}</strong><span>${editableItem.type}</span>`;
+  toggle.addEventListener("click", () => {
+    expandedSectionKey = item.key;
+    expandedEditableId = isOpen ? "" : editableItem.id;
+    selectedElement = editableItem.element;
+    renderSelectedElementEditor();
+    renderSectionsEditor();
+    sendPreviewUpdate();
+  });
+  wrapper.append(toggle);
+  if (isOpen) {
+    selectedElement = editableItem.element;
+    const controls = selectedElementControlsForType(editableItem.element.type || editableItem.type);
+    controls.className = "editable-item-controls";
+    wrapper.append(controls);
+  }
+  return wrapper;
+}
+
+function sectionActionButton(label, handler, disabled = false) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = label === "Delete" ? "danger-button tiny-button" : "secondary-button tiny-button";
+  button.textContent = label;
+  button.disabled = disabled;
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    handler();
+    renderSectionsEditor();
+    sendPreviewUpdate();
+  });
+  return button;
+}
+
+function renderSectionCard(item, index, items) {
+  const isOpen = expandedSectionKey ? expandedSectionKey === item.key : index === selectedSectionIndex;
+  const card = document.createElement("article");
+  card.className = `section-card${index === selectedSectionIndex ? " is-active" : ""}${isOpen ? " is-open" : ""}${sectionItemHidden(item) ? " is-hidden" : ""}`;
+  card.dataset.sectionKey = item.key;
+
+  const header = document.createElement("button");
+  header.type = "button";
+  header.className = "section-card-header";
+  const tags = [
+    sectionItemType(item),
+    item.kind === "native" ? "Original" : "Builder",
+    sectionItemHidden(item) ? "Hidden" : "",
+    index === 0 ? "First" : "",
+    index === items.length - 1 ? "Last" : ""
+  ].filter(Boolean).join(" · ");
+  header.innerHTML = `<strong>${sectionItemLabel(item, index)}</strong><span>${tags}</span>`;
+  header.addEventListener("click", () => {
+    selectedSectionIndex = index;
+    expandedSectionKey = isOpen ? "" : item.key;
+    renderSectionsEditor();
+  });
+  header.addEventListener("dblclick", (event) => {
+    event.preventDefault();
+    selectedSectionIndex = index;
+    expandedSectionKey = item.key;
+    focusPreviewSection(item);
+    renderSectionsEditor();
+  });
+  card.append(header);
+
+  if (!isOpen) return card;
+
+  const actions = document.createElement("div");
+  actions.className = "section-actions";
+  actions.append(
+    sectionActionButton("Move up", () => moveSectionItem(-1), index <= 0),
+    sectionActionButton("Move down", () => moveSectionItem(1), index >= items.length - 1),
+    sectionActionButton(sectionItemHidden(item) ? "Show" : "Hide", () => toggleSectionItemHidden(item)),
+    sectionActionButton("Duplicate", () => duplicateSectionItem(item)),
+    sectionActionButton("Delete", () => deleteSectionItem(item))
+  );
+  card.append(actions);
+
+  const itemSettings = item.kind === "builder" ? renderSectionFields(item.section) : renderNativeSectionFields(item);
+  itemSettings.classList.add("section-settings");
+  card.append(itemSettings);
+
+  const editables = document.createElement("div");
+  editables.className = "editable-item-list";
+  sectionEditableItems(item).forEach((editableItem) => editables.append(renderInlineEditableItem(editableItem, item)));
+  card.append(editables, renderLayerManagerForItem(item));
+  return card;
+}
+
+function renderLayerManagerForItem(item) {
+  const previousIndex = selectedSectionIndex;
+  const index = currentSectionItems().findIndex((candidate) => candidate.key === item.key);
+  if (index >= 0) selectedSectionIndex = index;
+  const manager = renderLayerManager();
+  selectedSectionIndex = previousIndex;
+  return manager;
+}
+
 function renderSectionsEditor() {
   sectionsEditor.innerHTML = "";
   sectionsEditor.append(Object.assign(document.createElement("h2"), { textContent: "Page Sections" }));
@@ -1325,82 +1669,22 @@ function renderSectionsEditor() {
   });
   addRow.append(typeSelect, add);
   sectionsEditor.append(addRow);
-
-  const list = document.createElement("div");
-  list.className = "section-list";
   items = currentSectionItems();
-  items.forEach((item, index) => {
-    const row = document.createElement("button");
-    row.type = "button";
-    row.className = `section-row${index === selectedSectionIndex ? " is-active" : ""}${sectionItemHidden(item) ? " is-hidden" : ""}`;
-    const tags = [
-      sectionItemType(item),
-      item.kind === "native" ? "Original" : "Builder",
-      sectionItemHidden(item) ? "Hidden" : "",
-      index === 0 ? "First" : "",
-      index === items.length - 1 ? "Last" : ""
-    ].filter(Boolean).join(" · ");
-    row.innerHTML = `<strong>${sectionItemLabel(item, index)}</strong><span>${tags}</span>`;
-    row.addEventListener("click", () => {
-      selectedSectionIndex = index;
-      renderSectionsEditor();
-    });
-    list.append(row);
-  });
+  const list = document.createElement("div");
+  list.className = "section-card-list";
+  items.forEach((item, index) => list.append(renderSectionCard(item, index, items)));
   sectionsEditor.append(list);
-
-  const item = currentSectionItem();
-  if (!item) {
-    sectionsEditor.append(renderLayerManager());
-    return;
-  }
-  const actions = document.createElement("div");
-  actions.className = "button-row";
-  [
-    ["Move up", () => moveSectionItem(-1), selectedSectionIndex <= 0],
-    ["Move down", () => moveSectionItem(1), selectedSectionIndex >= items.length - 1],
-    [sectionItemHidden(item) ? "Show" : "Hide", () => toggleSectionItemHidden(item), false],
-    ["Duplicate", () => duplicateSectionItem(item), false],
-    ["Delete", () => deleteSectionItem(item), false]
-  ].forEach(([label, handler, disabled]) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = label === "Delete" ? "danger-button" : "secondary-button";
-    button.textContent = label;
-    button.disabled = disabled;
-    if (disabled && label === "Move up") button.title = "This section is already first.";
-    if (disabled && label === "Move down") button.title = "This section is already last.";
-    button.addEventListener("click", () => {
-      handler();
-      renderSectionsEditor();
-      sendPreviewUpdate();
-    });
-    actions.append(button);
-  });
-  const fields = item.kind === "builder" ? renderSectionFields(item.section) : renderNativeSectionFields(item);
-  sectionsEditor.append(actions, fields, renderLayerManager());
 }
 
 function renderContentFields() {
   contentEditor.innerHTML = "";
+  contentEditor.classList.toggle("is-hidden", selectedPage !== "products");
+  if (selectedPage !== "products") return;
   const title = document.createElement("h2");
-  title.textContent = `${PAGE_LABELS[selectedPage]} content`;
+  title.textContent = "Products collection";
   contentEditor.append(title);
 
-  if (selectedPage === "products") {
-    renderProductEditor();
-    return;
-  }
-
-  (SITE_FIELDS[selectedPage] || []).forEach(([key, label, type]) => {
-    contentEditor.append(fieldControl(key, label, type));
-  });
-  if (!SITE_FIELDS[selectedPage]) {
-    const note = document.createElement("p");
-    note.className = "help-text";
-    note.textContent = "This page uses shared content and Page Sections. Add or edit sections in the Page Sections panel.";
-    contentEditor.append(note);
-  }
+  renderProductEditor();
 }
 
 function updateAiDraftPreview() {
@@ -1750,17 +2034,28 @@ function downloadChanges() {
 }
 
 window.addEventListener("message", (event) => {
+  if (event.data?.type === "mega-furnit-section-focused") {
+    if (event.data.page && event.data.page !== selectedPage) return;
+    focusSidebarSection(event.data.sectionKey, event.data.editableId);
+    return;
+  }
   if (event.data?.type !== "mega-furnit-element-selected") return;
   selectedElement = event.data.element;
   if (selectedElement?.page === selectedPage && selectedElement.sectionKey) {
     const index = currentSectionItems().findIndex((item) => item.key === selectedElement.sectionKey);
-    if (index >= 0) selectedSectionIndex = index;
+    if (index >= 0) {
+      selectedSectionIndex = index;
+      expandedSectionKey = selectedElement.sectionKey;
+      expandedEditableId = selectedElement.id || expandedEditableId;
+    }
     renderSectionsEditor();
   } else if (selectedElement?.page === selectedPage && selectedElement.sectionIndex !== undefined) {
     const section = pageBuilder.pages?.[selectedPage]?.[Number(selectedElement.sectionIndex)];
     const key = section ? builderSectionKey(section) : "";
     const index = currentSectionItems().findIndex((item) => item.key === key);
     selectedSectionIndex = index >= 0 ? index : Number(selectedElement.sectionIndex);
+    if (key) expandedSectionKey = key;
+    expandedEditableId = selectedElement.id || expandedEditableId;
     renderSectionsEditor();
   }
   renderSelectedElementEditor();
@@ -1773,6 +2068,7 @@ async function init() {
     loadJson("/data/products.json"),
     loadOptionalJson("/data/page-builder.json", { theme: { ...THEME_DEFAULTS }, pages: {} })
   ]);
+  productData = normalizeProductData(productData);
   ensureLanguageObjects();
   ensurePageBuilder();
   pageSelector.addEventListener("change", () => {

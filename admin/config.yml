@@ -15,6 +15,14 @@ collections:
         file: "data/site-content.json"
         format: "json"
         fields:
+          - label: "Schema Metadata"
+            name: "_schema"
+            widget: "object"
+            collapsed: true
+            fields:
+              - { label: "Schema Version", name: "schemaVersion", widget: "hidden", default: "1.0.0" }
+              - { label: "Data Type", name: "dataType", widget: "hidden", default: "site-content" }
+              - { label: "Last Updated By", name: "lastUpdatedBy", widget: "hidden", default: "Decap CMS" }
           - label: "English"
             name: "en"
             widget: "object"
@@ -63,6 +71,14 @@ collections:
         file: "data/products.json"
         format: "json"
         fields:
+          - label: "Schema Metadata"
+            name: "_schema"
+            widget: "object"
+            collapsed: true
+            fields:
+              - { label: "Schema Version", name: "schemaVersion", widget: "hidden", default: "1.0.0" }
+              - { label: "Data Type", name: "dataType", widget: "hidden", default: "products" }
+              - { label: "Last Updated By", name: "lastUpdatedBy", widget: "hidden", default: "Decap CMS" }
           - label: "Products"
             name: "products"
             widget: "list"
