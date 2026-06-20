@@ -912,12 +912,22 @@ function whatsappHref(product) {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
+function productMainImage(product) {
+  return product?.image || "assets/images/placeholder-furniture.svg";
+}
+
+function productGalleryImages(product) {
+  const gallery = Array.isArray(product?.gallery) ? product.gallery : [];
+  return [productMainImage(product), ...gallery].filter((imagePath, index, all) => imagePath && all.indexOf(imagePath) === index);
+}
+
 function productCard(product) {
   const factoryTypeLabel = localized(product.factoryTypeLabel) || t(product.factoryType);
+  const image = productMainImage(product);
   return `
     <article class="product-card" ${productEditable(product, "product-card", "root")}>
       <a href="product-detail.html?id=${encodeURIComponent(product.id)}" aria-label="${localized(product.name)}">
-        <img src="${product.image}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
+        <img src="${image}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
       </a>
       <div class="product-body">
         <div>
@@ -1015,10 +1025,15 @@ function renderProductDetail() {
     .map(([labelKey, fallbackLabel, field]) => `<div class="spec-row"><dt ${i18nEditable("heading", labelKey)}>${t(labelKey) === labelKey ? fallbackLabel : t(labelKey)}</dt><dd ${productEditable(product, "text", field)}>${localized(product[field]) || product[field]}</dd></div>`)
     .join("");
   const factoryTypeLabel = localized(product.factoryTypeLabel) || t(product.factoryType);
+  const galleryImages = productGalleryImages(product);
+  const galleryHtml = galleryImages.length > 1 ? `<div class="detail-gallery" aria-label="Product gallery">
+    ${galleryImages.map((imagePath, index) => `<button type="button" class="${index === 0 ? "is-active" : ""}" data-gallery-image="${escapeAttr(imagePath)}"><img src="${escapeAttr(imagePath)}" alt="${escapeAttr(localized(product.name))}"></button>`).join("")}
+  </div>` : "";
 
   detail.innerHTML = `
     <div>
-      <img class="detail-image" src="${product.image}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
+      <img class="detail-image" data-detail-main-image src="${productMainImage(product)}" alt="${localized(product.name)}" ${productEditable(product, "image", "image")}>
+      ${galleryHtml}
     </div>
     <aside class="detail-panel">
       <div class="product-id"><span ${productEditable(product, "text", "id")}>${product.id}</span> · <span ${productEditable(product, "text", "category")}>${localized(product.category)}</span></div>
@@ -1042,6 +1057,17 @@ function renderProductDetail() {
       </div>
     </aside>
   `;
+  setupProductGallery(detail);
+}
+
+function setupProductGallery(detail) {
+  const mainImage = detail.querySelector("[data-detail-main-image]");
+  detail.querySelectorAll("[data-gallery-image]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (mainImage) mainImage.src = button.dataset.galleryImage;
+      detail.querySelectorAll("[data-gallery-image]").forEach((item) => item.classList.toggle("is-active", item === button));
+    });
+  });
 }
 
 function setupContactSubject() {

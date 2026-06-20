@@ -98,6 +98,10 @@ const HERO_BACKGROUND_DEFAULTS = {
   overlayOpacity: "0.86"
 };
 const SCHEMA_VERSION = "1.0.0";
+const UPLOAD_FOLDER = "assets/images/uploads";
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "gif"];
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const NATIVE_SECTIONS = {
   home: [
     { id: "home-native-0", label: "Hero Banner", type: "Original Section" },
@@ -578,6 +582,91 @@ function checkboxControl(label, checked, onChange) {
   return wrapper;
 }
 
+function slugifyFileBase(value) {
+  return String(value || "image")
+    .toLowerCase()
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 70) || "image";
+}
+
+function timestampSuffix() {
+  return new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
+}
+
+function safeUploadPath(file) {
+  const extension = (file.name.split(".").pop() || "").toLowerCase();
+  const safeExtension = ALLOWED_IMAGE_EXTENSIONS.includes(extension) ? extension : "jpg";
+  return `${UPLOAD_FOLDER}/${slugifyFileBase(file.name)}-${timestampSuffix()}.${safeExtension}`;
+}
+
+function validateImageFile(file) {
+  if (!file) return "No file selected.";
+  const extension = (file.name.split(".").pop() || "").toLowerCase();
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type) || !ALLOWED_IMAGE_EXTENSIONS.includes(extension)) {
+    return "Please choose a JPG, PNG, WebP, or GIF image.";
+  }
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    return "Image is larger than 5 MB. Please resize it before uploading.";
+  }
+  return "";
+}
+
+async function queueImageUpload(file, onPath) {
+  const validationError = validateImageFile(file);
+  if (validationError) {
+    statusMessage.textContent = validationError;
+    return;
+  }
+  const token = await currentUserToken();
+  if (!token) {
+    statusMessage.textContent = "Please log in with Netlify Identity before uploading images.";
+    if (window.netlifyIdentity?.open) window.netlifyIdentity.open("login");
+    return;
+  }
+  const imagePath = safeUploadPath(file);
+  pendingUploads.set(imagePath, file);
+  onPath(imagePath);
+  statusMessage.textContent = `Image queued for upload: ${imagePath}. Click Save to commit it to GitHub.`;
+  sendPreviewUpdate();
+}
+
+function imageUploadControl(label, onPath, currentPath = "") {
+  const wrapper = document.createElement("div");
+  wrapper.className = "field image-upload-field";
+  const labelElement = document.createElement("label");
+  labelElement.textContent = label;
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ALLOWED_IMAGE_TYPES.join(",");
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    await queueImageUpload(file, (imagePath) => {
+      onPath(imagePath);
+      renderContentFields();
+      renderSectionsEditor();
+      renderSelectedElementEditor();
+    });
+  });
+  const help = document.createElement("p");
+  help.className = "help-text";
+  help.textContent = currentPath
+    ? `Current: ${currentPath}. JPG, PNG, WebP, or GIF up to 5 MB.`
+    : "JPG, PNG, WebP, or GIF up to 5 MB. Image uploads when you click Save.";
+  if (currentPath) {
+    const previewImage = document.createElement("img");
+    previewImage.className = "media-thumb";
+    previewImage.src = currentPath;
+    previewImage.alt = "";
+    wrapper.append(labelElement, previewImage, input, help);
+    return wrapper;
+  }
+  wrapper.append(labelElement, input, help);
+  return wrapper;
+}
+
 function moveSelectedSection(direction) {
   const page = selectedElement?.page || selectedPage;
   const order = ensureSectionOrder(page);
@@ -702,6 +791,7 @@ function selectedElementControlsForType(type) {
       if (layer.type === "Button") add(selectedStyleColor("Hover background color", "hoverBackgroundColor", "#1E1E1E"));
     } else if (layer.type === "Image") {
       add(layerInput("Image path", "image"));
+      add(imageUploadControl("Upload / replace layer image", (imagePath) => { layer.image = imagePath; }, layer.image));
       add(layerLocalizedInput("Alt text", "alt", "input"));
       add(selectedStyleSelect("Object fit", "objectFit", ["", "cover", "contain", "fill"]));
       add(selectedStyleInput("Link URL", "href"));
@@ -778,6 +868,9 @@ function selectedElementControlsForType(type) {
     add(simpleInput("Image path", selectedElementValue(), (value) => {
       updateSelectedElementValue(value, selectedElement.field || "image");
     }));
+    add(imageUploadControl("Upload / replace image", (imagePath) => {
+      updateSelectedElementValue(imagePath, selectedElement.field || "image");
+    }, selectedElementValue()));
     add(selectedStyleInput("Alt text", "altText"));
     add(selectedStyleInput("Width", "width"));
     add(selectedStyleInput("Height", "height"));
@@ -797,6 +890,11 @@ function selectedElementControlsForType(type) {
     if (section) section.backgroundImage = value;
     selectedStyle().backgroundImage = value;
   }));
+  add(imageUploadControl("Upload / replace background image", (imagePath) => {
+    const section = selectedSection();
+    if (section) section.backgroundImage = imagePath;
+    selectedStyle().backgroundImage = imagePath;
+  }, backgroundImageValue));
   add(selectedStyleColor("Overlay color", "overlayColor", HERO_BACKGROUND_DEFAULTS.overlayColor));
   add(selectedStyleText("Overlay opacity", "overlayOpacity", heroSelected ? HERO_BACKGROUND_DEFAULTS.overlayOpacity : ""));
   add(selectedStyleColor("Text color", "color", "#151515"));
@@ -1060,6 +1158,11 @@ function renderRepeater(section, key, fields, defaultItem) {
           item[fieldKey] = item[fieldKey] || {};
           item[fieldKey][selectedLanguage] = value;
         }, "textarea"));
+      } else if (mode === "image") {
+        itemBox.append(simpleInput(label, item[fieldKey], (value) => { item[fieldKey] = value; }));
+        itemBox.append(imageUploadControl(`Upload ${label.toLowerCase()}`, (imagePath) => {
+          item[fieldKey] = imagePath;
+        }, item[fieldKey]));
       } else {
         itemBox.append(simpleInput(label, item[fieldKey], (value) => { item[fieldKey] = value; }));
       }
@@ -1103,7 +1206,9 @@ function renderSectionFields(section) {
   fields.append(sectionInput(section, "buttonText", "Button text"));
   fields.append(sectionPlainInput(section, "buttonLink", "Button link"));
   fields.append(sectionPlainInput(section, "image", "Image path"));
+  fields.append(imageUploadControl("Upload / replace section image", (imagePath) => { section.image = imagePath; }, section.image));
   fields.append(sectionPlainInput(section, "backgroundImage", "Background image path"));
+  fields.append(imageUploadControl("Upload / replace background image", (imagePath) => { section.backgroundImage = imagePath; }, section.backgroundImage));
   fields.append(sectionPlainInput(section, "videoPath", "Video path"));
   fields.append(sectionPlainInput(section, "posterImage", "Poster image path"));
   fields.append(sectionPlainInput(section, "spacing", "Section spacing / padding"));
@@ -1113,10 +1218,10 @@ function renderSectionFields(section) {
   fields.append(sectionPlainInput(section, "selectedCategory", "Selected category"));
   fields.append(sectionPlainInput(section, "maxProducts", "Max products", "number"));
   fields.append(simpleInput("Custom HTML/Text", section.customHtml, (value) => { section.customHtml = value; }, "textarea"));
-  if (section.type === "Image Gallery") fields.append(renderRepeater(section, "images", [["image", "Image path", "plain"], ["caption", "Caption", "localized"]], { image: "assets/images/placeholder-furniture.svg", caption: { en: "Caption", es: "Subtítulo", zh: "说明" } }));
+  if (section.type === "Image Gallery") fields.append(renderRepeater(section, "images", [["image", "Image path", "image"], ["caption", "Caption", "localized"]], { image: "assets/images/placeholder-furniture.svg", caption: { en: "Caption", es: "Subtítulo", zh: "说明" } }));
   if (section.type === "Feature Cards") fields.append(renderRepeater(section, "cards", [["image", "Image path", "plain"], ["title", "Card title", "localized"], ["body", "Card body", "localized"]], { image: "", title: { en: "Feature", es: "Característica", zh: "特点" }, body: { en: "Feature text", es: "Texto", zh: "文字" } }));
   if (section.type === "FAQ Section") fields.append(renderRepeater(section, "items", [["question", "Question", "localized"], ["answer", "Answer", "localized"]], { question: { en: "Question", es: "Pregunta", zh: "问题" }, answer: { en: "Answer", es: "Respuesta", zh: "答案" } }));
-  if (section.type === "Logo Strip") fields.append(renderRepeater(section, "logos", [["image", "Logo image path", "plain"], ["alt", "Logo label", "localized"]], { image: "", alt: { en: "Logo", es: "Logo", zh: "标志" } }));
+  if (section.type === "Logo Strip") fields.append(renderRepeater(section, "logos", [["image", "Logo image path", "image"], ["alt", "Logo label", "localized"]], { image: "", alt: { en: "Logo", es: "Logo", zh: "标志" } }));
   return fields;
 }
 
@@ -1750,6 +1855,83 @@ function productSelect(label, value, onInput) {
   return wrapper;
 }
 
+function productGallery(product) {
+  return Array.isArray(product.gallery) ? product.gallery : [];
+}
+
+function setProductGallery(product, gallery) {
+  product.gallery = gallery.filter(Boolean);
+}
+
+function renderProductGalleryEditor(product) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "nested-editor product-gallery-editor";
+  wrapper.append(Object.assign(document.createElement("h3"), { textContent: "Product gallery" }));
+
+  const gallery = productGallery(product);
+  if (!gallery.length) {
+    const note = document.createElement("p");
+    note.className = "help-text";
+    note.textContent = "No gallery images yet. Add images below. Product cards continue using the main image.";
+    wrapper.append(note);
+  }
+
+  gallery.forEach((imagePath, index) => {
+    const item = document.createElement("div");
+    item.className = "gallery-row";
+    const thumb = document.createElement("img");
+    thumb.className = "media-thumb";
+    thumb.src = imagePath;
+    thumb.alt = "";
+    const input = document.createElement("input");
+    input.value = imagePath;
+    input.addEventListener("input", () => {
+      gallery[index] = input.value;
+      setProductGallery(product, gallery);
+      sendPreviewUpdate();
+    });
+    const actions = document.createElement("div");
+    actions.className = "mini-actions";
+    [
+      ["Set cover", () => { product.image = imagePath; }],
+      ["Up", () => {
+        if (index <= 0) return;
+        [gallery[index - 1], gallery[index]] = [gallery[index], gallery[index - 1]];
+        setProductGallery(product, gallery);
+      }],
+      ["Down", () => {
+        if (index >= gallery.length - 1) return;
+        [gallery[index + 1], gallery[index]] = [gallery[index], gallery[index + 1]];
+        setProductGallery(product, gallery);
+      }],
+      ["Remove", () => {
+        gallery.splice(index, 1);
+        setProductGallery(product, gallery);
+      }]
+    ].forEach(([label, handler]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = label === "Remove" ? "danger-button tiny-button" : "secondary-button tiny-button";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        handler();
+        renderContentFields();
+        sendPreviewUpdate();
+      });
+      actions.append(button);
+    });
+    item.append(thumb, input, actions);
+    wrapper.append(item);
+  });
+
+  wrapper.append(imageUploadControl("Add gallery image", (imagePath) => {
+    const nextGallery = productGallery(product);
+    nextGallery.push(imagePath);
+    setProductGallery(product, nextGallery);
+  }));
+  return wrapper;
+}
+
 function newProduct() {
   const nextNumber = String(productData.products.length + 1).padStart(3, "0");
   return {
@@ -1771,7 +1953,8 @@ function newProduct() {
       zh: "面料、饰面、包装、贴牌方案"
     },
     description: { en: "New product description.", es: "Descripción del producto.", zh: "产品描述。" },
-    image: "assets/images/placeholder-furniture.svg"
+    image: "assets/images/placeholder-furniture.svg",
+    gallery: []
   };
 }
 
@@ -1811,20 +1994,10 @@ function renderProductEditor() {
   contentEditor.append(productInput("Dimensions", product.dimensions, (value) => { product.dimensions = value; }));
   contentEditor.append(productInput("Materials", localized(product.materials), (value) => setLocalized(product, "materials", value), "textarea"));
   contentEditor.append(productInput("Image path", product.image, (value) => { product.image = value; }));
-
-  const upload = document.createElement("div");
-  upload.className = "field";
-  upload.innerHTML = `<label>Upload product image</label><input type="file" accept="image/*"><p class="help-text">For preview, this sets the path to assets/images/uploads/file-name. Publish the actual image through Decap CMS media upload or GitHub.</p>`;
-  upload.querySelector("input").addEventListener("change", (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    const imagePath = `assets/images/uploads/${file.name}`;
+  contentEditor.append(imageUploadControl("Upload / replace main image", (imagePath) => {
     product.image = imagePath;
-    pendingUploads.set(imagePath, file);
-    renderContentFields();
-    sendPreviewUpdate();
-  });
-  contentEditor.append(upload);
+  }, product.image));
+  contentEditor.append(renderProductGalleryEditor(product));
 
   const removeButton = document.createElement("button");
   removeButton.className = "danger-button";
@@ -2016,6 +2189,7 @@ async function saveChanges() {
     await saveGitGatewayFile("data/site-content.json", siteContent, token);
     await saveGitGatewayFile("data/products.json", productData, token);
     await saveGitGatewayFile("data/page-builder.json", pageBuilder, token);
+    pendingUploads.clear();
     statusMessage.textContent = "Saved to GitHub successfully. Netlify will redeploy from the commit.";
   } catch (error) {
     console.warn(error);

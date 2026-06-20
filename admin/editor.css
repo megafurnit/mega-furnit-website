@@ -96,6 +96,10 @@ h3 {
   border-radius: 8px;
 }
 
+.editor-panel.is-hidden {
+  display: none;
+}
+
 .field {
   display: grid;
   gap: 7px;
@@ -177,9 +181,101 @@ textarea {
   box-shadow: inset 3px 0 0 var(--forest);
 }
 
+.section-row.is-hidden {
+  opacity: .62;
+}
+
 .section-row span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.section-card-list {
+  display: grid;
+  gap: 12px;
+}
+
+.section-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.section-card.is-active {
+  border-color: var(--forest);
+  box-shadow: inset 3px 0 0 var(--forest);
+}
+
+.section-card.is-hidden {
+  opacity: .66;
+}
+
+.section-card.is-attention {
+  animation: sectionAttention 1.1s ease;
+}
+
+.section-card-header,
+.editable-item-toggle {
+  display: grid;
+  width: 100%;
+  gap: 4px;
+  padding: 12px;
+  border: 0;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.section-card-header span,
+.editable-item-toggle span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.section-card.is-open .section-card-header {
+  background: #f5f8f6;
+}
+
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  background: #fbfaf7;
+}
+
+.section-settings {
+  margin: 10px 12px;
+}
+
+.editable-item-list {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.editable-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.editable-item.is-open {
+  border-color: rgba(181, 137, 75, 0.58);
+}
+
+.editable-item-controls {
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+@keyframes sectionAttention {
+  0% { box-shadow: 0 0 0 0 rgba(181, 137, 75, 0); }
+  35% { box-shadow: 0 0 0 5px rgba(181, 137, 75, 0.25); }
+  100% { box-shadow: 0 0 0 0 rgba(181, 137, 75, 0); }
 }
 
 .layer-list {
@@ -228,6 +324,47 @@ textarea {
 .tiny-button {
   padding: 6px 8px;
   font-size: 12px;
+}
+
+.image-upload-field {
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.media-thumb {
+  width: 100%;
+  max-width: 160px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef2ef;
+}
+
+.product-gallery-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.gallery-row {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.gallery-row .media-thumb {
+  width: 76px;
+}
+
+.gallery-row .mini-actions {
+  grid-column: 1 / -1;
 }
 
 .nested-editor {

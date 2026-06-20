@@ -110,6 +110,11 @@ collections:
                   - { label: "Spanish", name: "es", widget: "string", required: false }
                   - { label: "Chinese", name: "zh", widget: "string", required: false }
               - { label: "Product Image", name: "image", widget: "image" }
+              - label: "Product Gallery"
+                name: "gallery"
+                widget: "list"
+                required: false
+                field: { label: "Gallery Image", name: "image", widget: "image" }
               - label: "Description"
                 name: "description"
                 widget: "object"
