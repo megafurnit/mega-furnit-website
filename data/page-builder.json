@@ -184,8 +184,11 @@
       "color": "#FFFFFF"
     },
     "section-native-home-native-0": {
-      "backgroundColor": "#12201B",
-      "backgroundImage": ""
+      "backgroundColor": "#FFFFFF",
+      "backgroundImage": "",
+      "color": "#7A5230",
+      "overlayColor": "#12201B",
+      "borderColor": "#8C867D"
     },
     "home--metric-0": {},
     "site-metricOwnedNumber": {
@@ -268,6 +271,15 @@
     },
     "home-background-0": {
       "color": "#EFE6D8"
-    }
+    },
+    "i18n-navProducts": {},
+    "section-native-products-native-0": {
+      "color": "#151515",
+      "overlayColor": "#12201B"
+    },
+    "i18n-productsTitle": {
+      "color": "#151515"
+    },
+    "section-native-products-native-1": {}
   }
 }
