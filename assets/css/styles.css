@@ -119,27 +119,29 @@ textarea {
 .nav {
   display: grid;
   justify-items: center;
-  min-height: 118px;
-  padding: 20px 0 14px;
-  gap: 14px;
+  min-height: 174px;
+  padding: 24px 0 18px;
+  gap: 18px;
 }
 
 .brand {
   display: grid;
   justify-items: center;
-  gap: 4px;
+  gap: 8px;
   text-align: center;
 }
 
 .brand strong {
   font-family: var(--font-heading);
-  font-size: 32px;
-  line-height: 1;
+  font-size: clamp(4rem, 8vw, 6.4rem);
+  line-height: 0.92;
+  letter-spacing: 0;
 }
 
 .brand span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: clamp(13px, 1.25vw, 17px);
+  font-weight: 650;
 }
 
 .nav-links {
@@ -1021,6 +1023,7 @@ p {
   .nav {
     min-height: auto;
     padding-top: 12px;
+    gap: 12px;
   }
 
   .nav-toggle {
@@ -1094,7 +1097,7 @@ p {
   }
 
   .brand strong {
-    font-size: 28px;
+    font-size: clamp(3rem, 15vw, 4.7rem);
   }
 
   .brand span {
