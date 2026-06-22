@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.megafurnit.com/sitemap.xml
+Sitemap: https://megafurnit.com/sitemap.xml
